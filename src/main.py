@@ -1,16 +1,8 @@
-from google_auth_oauthlib.flow import InstalledAppFlow
-import webbrowser
-from src.config import SCOPES
+from src.auth import get_credentials
 
-CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+def main():
+    creds = get_credentials()
+    print("Autenticación finalizada. Credenciales válidas: ", creds)
 
-webbrowser.register(
-    "chrome-incognito", None,
-    webbrowser.BackgroundBrowser([CHROME, "--incognito", "%s"]),
-)
-
-flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
-creds = flow.run_local_server(port=0, browser="chrome-incognito")
-
-with open("token.json", "w") as f:
-    f.write(creds.to_json())
+if __name__ == "__main__":
+    main()

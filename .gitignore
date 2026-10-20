@@ -1,4 +1,9 @@
+# Credenciales
 credentials.json
 token.json
+
+# Temporales
 __pycache__/
+
+# Extesiones que se deben ignorar
 *.xlsx

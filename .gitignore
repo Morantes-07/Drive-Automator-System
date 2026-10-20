@@ -2,8 +2,10 @@
 credentials.json
 token.json
 
-# Temporales
+# Temporales y entornos
 __pycache__/
+venv/
+.venv/
 
 # Extesiones que se deben ignorar
 *.xlsx

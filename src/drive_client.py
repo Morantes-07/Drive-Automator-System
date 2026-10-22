@@ -1,10 +1,6 @@
 from googleapiclient.discovery import build
 
-FIELDS = (
-    "nextPageToken, "
-    "files(id, name, mimeType, size, webViewLink, parents, "
-    "owners(displayName, emailAddress))"
-)
+FIELDS = "nextPageToken, files(id, name, mimeType, size, webViewLink, parents, owners(displayName, emailAddress))"
 
 def get_service(creds):
     return build("drive", "v3", credentials=creds)

@@ -18,3 +18,18 @@ def list_files(service, query):
             break
 
     return files
+
+def list_folders(service):
+    folders, token = [], None
+    while True:
+        resp = service.files().list(
+            q="mimeType='application/vnd.google-apps.folder' and trashed=false",
+            fields="nextPageToken, files(id, name, parents)",
+            pageSize=1000,
+            pageToken=token,
+        ).execute()
+        folders += resp["files"]
+        token = resp.get("nextPageToken")
+        if not token:
+            break
+    return folders

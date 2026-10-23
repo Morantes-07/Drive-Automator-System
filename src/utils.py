@@ -7,7 +7,6 @@ def build_df(files):
     df["owner"] = df["owners"].apply(
         lambda o: o[0]["emailAddress"] if o and isinstance(o, list) else None 
     )
-    df["size"] = pd.to_numeric(df.get("size"), errors="coerce")
     df["parent_id"] = df["parents"].apply(
         lambda p: p[0] if p and isinstance(p, list) else None
     )

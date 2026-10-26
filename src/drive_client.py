@@ -37,3 +37,6 @@ def list_folders(service):
         if not page_token:
             break
     return folders
+# Obtener el ID de la carpeta Root del Drive
+def get_root_id(service):
+    return service.files().get(fileId="root", fields="id").execute()["id"]

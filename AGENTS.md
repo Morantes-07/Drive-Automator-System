@@ -15,7 +15,7 @@
 **Never**
 - Run `python src/main.py`.
 - Commit, print, or log `credentials.json` or `token.json`.
-- Commit before ask for confirmation
+- Commit without asking for confirmation
 - Remove `owners` or `parents` from `FIELDS` in `drive_client.py` (it breaks `build_df`).
 
 ## Architecture

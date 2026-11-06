@@ -1,6 +1,7 @@
-from src.auth import get_credentials
+from src.authentication.auth import get_credentials
 from src.drive.drive_client import get_service, list_files
-from src.utils import build_df, find_root_project
+from src.utils.dataframes import build_df
+from src.utils.path_management import find_root_project
 
 BASE_DIR = find_root_project() # Carpeta raíz del proyecto
 

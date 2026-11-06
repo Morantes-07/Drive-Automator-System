@@ -20,6 +20,8 @@
 
 ## Architecture
 - `find_root_project()` locates the repo root regardless of the cwd.
+- The codebase strictly adheres to a modular design principle; complex functionalities and distinct responsibilities must be split into small, reusable modules within src/.
+- Test codes go inside tests folder
 
 ## Environment and authentication
 - Venv in `venv/` (Python 3.14.7).

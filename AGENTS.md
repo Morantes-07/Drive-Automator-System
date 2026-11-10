@@ -11,6 +11,7 @@
 - Run as a module (`-m src.main`), because the `src.*` imports depend on the package layout.
 - Read and edit `requirements.txt` as UTF-16LE.
 - Write comments and docstrings in Spanish.
+- Write variables, classes, functions, etc., in English
 
 **Never**
 - Run `python src/main.py`.

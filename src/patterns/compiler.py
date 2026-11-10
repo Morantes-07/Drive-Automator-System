@@ -18,7 +18,6 @@ from .placeholders import (
     UnknownPlaceholderError,
 )
 
-
 @dataclass(frozen=True)
 class PatternSpec:
     """Definición de un patrón provista por el usuario en tiempo de ejecución.
@@ -30,7 +29,6 @@ class PatternSpec:
     program: str
     pattern: str
 
-
 @dataclass(frozen=True)
 class CompiledPattern:
     """Patrón ya compilado, listo para buscarse en nombres de archivo."""
@@ -40,10 +38,8 @@ class CompiledPattern:
     regex: re.Pattern[str]
     placeholders: tuple[str, ...]
 
-
 class CompileError(ValueError):
     """Error al compilar una definición de patrón."""
-
 
 def compile_pattern(spec: PatternSpec) -> CompiledPattern:
     """Compila un PatternSpec en una regex sin anclas, con IGNORECASE.
@@ -66,71 +62,70 @@ def compile_pattern(spec: PatternSpec) -> CompiledPattern:
             f"El patrón no contiene contenido válido para '{spec.program}'"
         )
 
-    partes: list[str] = []
+    parts: list[str] = []
     placeholders: list[str] = []
-    for tipo, texto in tokens:
-        if tipo == "literal":
-            partes.append(re.escape(texto))
+    for kind, text in tokens:
+        if kind == "literal":
+            parts.append(re.escape(text))
         else:
             try:
-                regex_placeholder = fragment(texto)
+                regex_placeholder = fragment(text)
             except UnknownPlaceholderError as exc:
                 raise CompileError(
-                    f"Placeholder desconocido '{texto}' en el patrón de "
+                    f"Placeholder desconocido '{text}' en el patrón de "
                     f"'{spec.program}': {spec.pattern}"
                 ) from exc
             # Nombre de grupo canónico (sin tildes, minúsculas) para que los
             # valores capturados sean predecibles independientemente de si el
             # usuario escribió {número} o {numero}.
-            clave = normalize(texto)
-            partes.append(f"(?P<{clave}>{regex_placeholder})")
-            placeholders.append(clave)
+            key = normalize(text)
+            parts.append(f"(?P<{key}>{regex_placeholder})")
+            placeholders.append(key)
 
     # Un placeholder no puede repetirse dentro del mismo patrón (nombres de
     # grupo duplicados en la regex).
-    vistos: set[str] = set()
-    duplicados: list[str] = []
+    seen: set[str] = set()
+    duplicates: list[str] = []
     for ph in placeholders:
-        if ph in vistos:
-            duplicados.append(ph)
-        vistos.add(ph)
-    if duplicados:
+        if ph in seen:
+            duplicates.append(ph)
+        seen.add(ph)
+    if duplicates:
         raise CompileError(
-            f"Placeholder repetido '{duplicados[0]}' en el patrón de "
+            f"Placeholder repetido '{duplicates[0]}' en el patrón de "
             f"'{spec.program}': {spec.pattern}"
         )
 
-    regex_str = "".join(partes)
+    regex_str = "".join(parts)
     try:
-        compilada = re.compile(regex_str, re.IGNORECASE)
+        compiled = re.compile(regex_str, re.IGNORECASE)
     except re.error as exc:
         raise CompileError(
-            f"Regex inválida '{regex_str}' para '{spec.program}': {exc}"
+            f"Regex inválida al compilar: '{regex_str}' para '{spec.program}': {exc}"
         ) from exc
 
     return CompiledPattern(
         program=spec.program.strip(),
         source=spec.pattern,
-        regex=compilada,
+        regex=compiled, 
         placeholders=tuple(placeholders),
     )
 
-
 def compile_patterns(specs: list[PatternSpec]) -> list[CompiledPattern]:
-    """Compila múltiples definiciones validando que no haya programas duplicados.
+    """Compila múltiples definiciones validando que no haya programas duplicados. 
 
-    Un programa debe cumplir un único patrón (por ahora).
+    Actualmente un programa debe cumplir únicamente con un patrón.
     """
-    compiladas: list[CompiledPattern] = []
-    programas_vistos: set[str] = set()
+    compiled: list[CompiledPattern] = []
+    seen_programs: set[str] = set()
     for spec in specs:
         if not isinstance(spec, PatternSpec):
             raise CompileError(
-                f"Se esperaba PatternSpec, se recibió {type(spec).__name__}"
+                f"Se esperaba clase de tipo PatternSpec, se recibió {type(spec).__name__}"
             )
-        clave_programa = spec.program.strip().lower()
-        if clave_programa in programas_vistos:
+        key_program = spec.program.strip().lower()
+        if key_program in seen_programs:
             raise CompileError(f"Programa duplicado: '{spec.program}'")
-        programas_vistos.add(clave_programa)
-        compiladas.append(compile_pattern(spec))
-    return compiladas
+        seen_programs.add()
+        compiled.append(compile_pattern(spec))
+    return compiled

@@ -1,6 +1,6 @@
 """Coincidencia de nombres de archivo contra patrones compilados.
 
-El match es un substring (sin anclas) y case-insensitive. Un archivo puede:
+El match es un substring (unanchored) y case-insensitive dentro de un archivo. Un archivo puede:
 - coincidir con un patrón -> se asigna su programa y valores capturados;
 - no coincidir con ninguno -> queda sin asignar;
 - coincidir con varios patrones -> se marca como ambiguo y no se asigna nada
@@ -14,7 +14,6 @@ from dataclasses import dataclass, field
 
 from .compiler import CompiledPattern
 
-
 @dataclass(frozen=True)
 class FileMatch:
     """Resultado de intentar encajar un nombre de archivo con un programa."""
@@ -24,7 +23,6 @@ class FileMatch:
     program: str | None = None
     values: dict[str, str] = field(default_factory=dict)
     candidates: tuple[str, ...] = field(default_factory=tuple)
-
 
 @dataclass(frozen=True)
 class MatchReport:
@@ -47,7 +45,6 @@ class MatchReport:
         """Archivos que no coincidieron con ningún programa."""
         return [r for r in self.results if r.status == "unmatched"]
 
-
 def match_file(file_name: str, patterns: list[CompiledPattern]) -> FileMatch:
     """Busca el patrón que coincide con el nombre de archivo.
 
@@ -56,21 +53,21 @@ def match_file(file_name: str, patterns: list[CompiledPattern]) -> FileMatch:
     - >=2 coincidencias -> ambiguous, sin asignar programa.
     """
     hits: list[tuple[CompiledPattern, re.Match[str]]] = []
-    for patron in patterns:
-        coincidencia = patron.regex.search(file_name)
-        if coincidencia:
-            hits.append((patron, coincidencia))
+    for pattern in patterns:
+        coincidence = pattern.regex.search(file_name)
+        if coincidence:
+            hits.append((pattern, coincidence))
 
     if not hits:
         return FileMatch(file_name=file_name, status="unmatched")
 
     if len(hits) == 1:
-        patron, coincidencia = hits[0]
+        pattern, coincidence = hits[0]
         return FileMatch(
             file_name=file_name,
             status="matched",
-            program=patron.program,
-            values=coincidencia.groupdict(),
+            program=pattern.program,
+            values=coincidence.groupdict(),
         )
 
     return FileMatch(
@@ -79,12 +76,11 @@ def match_file(file_name: str, patterns: list[CompiledPattern]) -> FileMatch:
         candidates=tuple(p.program for p, _ in hits),
     )
 
-
 def match_files(
     file_names: list[str], patterns: list[CompiledPattern]
 ) -> MatchReport:
     """Coteja varios nombres de archivo contra los patrones compilados."""
-    resultados = tuple(
-        match_file(nombre, patterns) for nombre in file_names
+    results = tuple(
+        match_file(name, patterns) for name in file_names
     )
-    return MatchReport(results=resultados)
+    return MatchReport(results=results)

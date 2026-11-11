@@ -12,6 +12,7 @@
 - Read and edit `requirements.txt` as UTF-16LE.
 - Write comments and docstrings in Spanish.
 - Write variables, classes, functions, etc., in English
+- Ask before change code in build mode, unless the developer says you can change code without asking
 
 **Never**
 - Run `python src/main.py`.

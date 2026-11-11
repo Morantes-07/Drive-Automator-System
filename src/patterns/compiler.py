@@ -126,6 +126,6 @@ def compile_patterns(specs: list[PatternSpec]) -> list[CompiledPattern]:
         key_program = spec.program.strip().lower()
         if key_program in seen_programs:
             raise CompileError(f"Programa duplicado: '{spec.program}'")
-        seen_programs.add()
+        seen_programs.add(key_program)
         compiled.append(compile_pattern(spec))
     return compiled

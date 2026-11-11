@@ -1,7 +1,8 @@
 import pandas as pd
 
-# Función para construir el dataframe resultante
+# Construcción de dataframe
 def build_df(files):
+    """Construcción de dataframe para reporte de archivos"""
     df = pd.DataFrame(files)
     df["owner"] = df["owners"].apply(
         lambda o: o[0]["emailAddress"] if o and isinstance(o, list) else None 

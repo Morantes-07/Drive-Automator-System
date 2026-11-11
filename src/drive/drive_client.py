@@ -2,12 +2,12 @@ from googleapiclient.discovery import build
 
 FIELDS = "nextPageToken, files(id, name, mimeType, webViewLink, parents, owners(displayName, emailAddress))" # Campos para obtener de los archivos de Drive
 
-# Función para validar las credenciales. Las recibe como argumento
 def get_service(creds):
+    """Validar las credenciales. Las recibe como argumento"""
     return build("drive", "v3", credentials=creds) # Retorna el servicio API Drive V3 funcionando
 
-# Lista los archivos utilizando el servicio según el query
 def list_files(service, query):
+    """Lista los archivos utilizando el servicio según el query"""
     files = []
     page_token = None
     # El ciclo itera usando nextPageToken para no obtener todos los archivos en una sola petición
@@ -21,8 +21,9 @@ def list_files(service, query):
             break
 
     return files
-# Lista todas las carpetas utilizando el servicio
+
 def list_folders(service):
+    """Lista todas las carpetas utilizando el servicio"""
     folders, page_token = [], None
     while True:
         resp = service.files().list(
@@ -37,6 +38,7 @@ def list_folders(service):
         if not page_token:
             break
     return folders
-# Obtener el ID de la carpeta Root del Drive
+
 def get_root_id(service):
+    """Obtener el ID de la carpeta Root del Drive"""
     return service.files().get(fileId="root", fields="id").execute()["id"]

@@ -12,13 +12,13 @@ TOKEN_FILE = BASE_DIR / "token.json" # Guarda la info de token.json
 CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe" # Guarda la ruta exacta del navegador que se va a utilizar. Oportunidad de mejora: El usuario lo define
 
 def load_token():
-    #Retorna credenciales del token.json (None si no existen)
+    """Retorna credenciales del token.json (None si no existen)"""
     if TOKEN_FILE.exists():
         return Credentials.from_authorized_user_file(str(TOKEN_FILE), SCOPES)
     return None
 
 def refresh(creds):
-    # Intentar renovar el token. Retorna las creds (None si falla)
+    """Intentar renovar el token. Retorna las creds (None si falla)"""
     try:
         creds.refresh(Request())
         return creds
@@ -26,7 +26,7 @@ def refresh(creds):
         return None
 
 def browser_flow():
-    # Abre Chrome para el flujo de autenticación completo
+    """Abre Chrome para el flujo de autenticación completo"""
     webbrowser.register(
         "chrome-incognito", None, # abre el navegador en incógnito
         webbrowser.BackgroundBrowser([CHROME, "--incognito", "%s"]),
@@ -35,7 +35,7 @@ def browser_flow():
     return flow.run_local_server(port=0, browser="chrome-incognito")
 
 def get_credentials():
-    # Devuelve las credenciales válidas independientemente del caso
+    """Devuelve las credenciales válidas independientemente del caso, mientras se utiliza el credentials.json correcto"""
     creds = load_token()
 
     if creds and creds.valid:

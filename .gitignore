@@ -4,6 +4,8 @@ token.json
 
 # Temporales y entornos
 __pycache__/
+*/__pycache__/
+.pytest_cache/
 venv/
 .venv/
 

@@ -1,5 +1,5 @@
 import webbrowser
-from src.utils import find_root_project
+from src.utils.path_management import find_root_project
 from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials

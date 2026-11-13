@@ -1,28 +1,44 @@
-from src.authentication.auth import get_credentials
-from src.drive.drive_client import get_service, list_files
-from src.utils.dataframes import build_df
-from src.utils.path_management import find_root_project
+"""Punto de entrada de la aplicación.
 
-BASE_DIR = find_root_project() # Carpeta raíz del proyecto
+Uso:
+    python -m src.main          # interfaz gráfica (por defecto)
+    python -m src.main --cli    # flujo de consola
 
-# Query de archivos propios
-QUERY_OWNED = (
-    "'me' in owners and trashed = false "
-    "and mimeType != 'application/vnd.google-apps.folder'"
-)
-#Query de archivos compartidos
-QUERY_SHARED = (
-    "sharedWithMe = true and trashed = false "
-    "and mimeType != 'application/vnd.google-apps.folder'"
-)
+Las importaciones pesadas se hacen dentro de cada rama para que el arranque de
+la interfaz no cargue pandas ni el cliente de Drive antes de tiempo.
+"""
 
-def main():
-    creds = get_credentials()
-    service = get_service(creds=creds)
+from __future__ import annotations
 
-    files = list_files(service=service, query=QUERY_OWNED)
-    df = build_df(files=files)
-    df.to_excel(BASE_DIR/"output"/"reporte_ejemplo.xlsx", sheet_name="Testeo Drive", index=False)
+import argparse
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Define los argumentos de línea de comandos."""
+    parser = argparse.ArgumentParser(
+        prog="python -m src.main",
+        description="Organizador de archivos de Google Drive.",
+    )
+    parser.add_argument(
+        "--cli",
+        action="store_true",
+        help="Ejecuta el flujo de consola en lugar de abrir la interfaz.",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    """Abre la interfaz gráfica o ejecuta el flujo de consola."""
+    args = build_parser().parse_args(argv)
+    if args.cli:
+        from src.cli import run_cli
+
+        run_cli()
+        return
+
+    from src.ui.app import run_app
+
+    run_app()
 
 
 if __name__ == "__main__":

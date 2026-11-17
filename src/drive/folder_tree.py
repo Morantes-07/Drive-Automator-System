@@ -75,12 +75,12 @@ class FolderTreeModel:
         self,
         folders: Iterable[Mapping[str, object] | FolderNode],
         root_id: str,
-        root_name: str = "Mi Drive",
+        root_name: str = "Mi unidad",
     ):
         if not root_id or not str(root_id).strip():
             raise FolderTreeError("La carpeta raíz necesita un id")
         root_id = str(root_id).strip()
-        root_name = (root_name or "Mi Drive").strip() or "Mi Drive"
+        root_name = (root_name or "Mi unidad").strip() or "Mi unidad"
 
         nodes: dict[str, FolderNode] = {}
         for folder in folders:

@@ -104,7 +104,7 @@ class FolderTreeModel:
 
         self._nodes = nodes
         self._children = {
-            parent_id: tuple(sorted(ids, key=lambda folder_id: _sort_key(nodes[folder_id])))
+            parent_id: tuple(sorted(ids, key=lambda child_id: _sort_key(nodes[child_id])))
             for parent_id, ids in children.items()
         }
         self._root_id = root_id
@@ -168,8 +168,8 @@ class FolderTreeModel:
 
     def children_of(self, folder_id: str) -> tuple[FolderNode, ...]:
         """Hijos directos de una carpeta, ordenados alfabéticamente."""
-        ids = self._children.get(folder_id, ())
-        return tuple(self._nodes[folder_id] for folder_id in ids)
+        ids = self._children.get(folder_id, ()) # Usa .get(folder, ()) en vez de [] para evitar errores si una carpeta no tiene hijos
+        return tuple(self._nodes[_id] for _id in ids)
 
     def has_children(self, folder_id: str) -> bool:
         """Indica si la carpeta tiene al menos un hijo directo."""
@@ -190,12 +190,12 @@ class FolderTreeModel:
         """Ruta lógica de la carpeta, desde la raíz hasta ella.
 
         Con varios padres se elige el primero que exista en el modelo y que no
-        se haya visitado todavía, de modo que un ciclo en los datos no bloquea
+        se haya recorrido todavía, de modo que un ciclo en los datos no bloquea
         la construcción de la ruta.
         """
         node = self._nodes.get(folder_id)
         if node is None:
-            raise FolderTreeError(f"Carpeta desconocida: '{folder_id}'")
+            raise FolderTreeError(f"Carpeta desconocida: '{folder_id}'") # Un id de carpeta que no existe, debe arrojar un error
 
         parts = [node.name]
         visited = {node.id}
@@ -222,18 +222,16 @@ class FolderTreeModel:
         vacía o si alguna parte no existe.
 
         Raises:
-            AmbiguousPathError: Si una parte de la ruta coincide con más de
-                una carpeta del mismo padre.
+            AmbiguousPathError: Si una parte de la ruta coincide con más de una carpeta del mismo padre.
         """
         if path is None:
             return None
-        # Se admite tanto "/" como "\" para que el texto pegado desde Windows
-        # también funcione.
+        # Se admite tanto "/" como "\" para que el texto pegado desde Windows también funcione
         parts = [
             part.strip()
             for part in str(path).replace("\\", "/").split("/")
         ]
-        parts = [part for part in parts if part]
+        parts = [part for part in parts if part] # Elimina piezas vacías, ej: Mi unidad/Trabajo//Informe -> Mi Unidad/Trabajo/Informe
         if not parts:
             return None
 

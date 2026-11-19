@@ -26,8 +26,7 @@ class ProgramDefinition:
     destination_id: str | None = None
 
     def __post_init__(self) -> None:
-        # Los campos se normalizan al construir para que el resto del código no
-        # tenga que repetir los mismos strip.
+        # Los campos se normalizan al construir para que el resto del código no tenga que repetir los mismos strip.
         object.__setattr__(self, "program", str(self.program).strip())
         object.__setattr__(self, "pattern", str(self.pattern).strip())
         object.__setattr__(

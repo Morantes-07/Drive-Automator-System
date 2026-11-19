@@ -16,10 +16,8 @@ from src.patterns.compiler import (
 
 from .models import ProgramDefinition
 
-
 class ProgramStoreError(ValueError):
     """Error de validación del registro de programas."""
-
 
 class ProgramStore:
     """Lista ordenada de programas, sin duplicados por nombre."""

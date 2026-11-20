@@ -17,6 +17,7 @@ from src.config import DRY_RUN
 from src.drive.folder_tree import FolderTreeModel
 from src.programs import ProgramStore
 
+from .organize_tab import OrganizeTab
 from .programs_tab import ProgramsTab
 from .theme import (
     DEFAULT_THEME,
@@ -167,6 +168,20 @@ class DriveOrganizerApp(ctk.CTk):
         )
         self.programs_tab.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
+        organize = self._tabs.add("Organizar")
+        organize.grid_columnconfigure(0, weight=1)
+        organize.grid_rowconfigure(0, weight=1)
+
+        self.organize_tab = OrganizeTab(
+            organize,
+            self.store,
+            theme=theme,
+            on_reload=self.reload_drive,
+        )
+        self.organize_tab.grid(
+            row=0, column=0, sticky="nsew", padx=10, pady=10
+        )
+
     def _build_status_bar(self) -> None:
         theme = self._theme
         bar = ctk.CTkFrame(self, fg_color=theme.pair("panel"), corner_radius=0)
@@ -200,6 +215,7 @@ class DriveOrganizerApp(ctk.CTk):
         self._loading_drive = True
         self.model = None
         self.programs_tab.set_model(None)
+        self.organize_tab.set_model(None)
         self._reload_button.configure(state="disabled")
         self._set_status("Conectando con Google Drive…", "warning")
 
@@ -225,6 +241,7 @@ class DriveOrganizerApp(ctk.CTk):
         self._loading_drive = False
         self.model = model
         self.programs_tab.set_model(model)
+        self.organize_tab.set_model(model)
         self._reload_button.configure(state="normal")
         self._set_status(f"{len(model)} carpetas de Drive cargadas.", "success")
 
@@ -232,6 +249,7 @@ class DriveOrganizerApp(ctk.CTk):
         self._loading_drive = False
         self.model = None
         self.programs_tab.set_model(None)
+        self.organize_tab.set_model(None)
         self._reload_button.configure(state="normal")
         self._set_status(f"No se pudo conectar con Drive: {exc}", "danger")
 
@@ -250,9 +268,12 @@ class DriveOrganizerApp(ctk.CTk):
         self._theme.apply()
         self.configure(fg_color=self._theme.pair("window"))
         self.programs_tab.apply_theme()
+        self.organize_tab.apply_theme()
 
     def _on_store_change(self, _store: ProgramStore) -> None:
         self._update_summary()
+        if hasattr(self, "organize_tab"):
+            self.organize_tab.invalidate_plan()
 
     def _update_summary(self) -> None:
         total = len(self.store)

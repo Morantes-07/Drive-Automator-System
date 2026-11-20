@@ -1,13 +1,17 @@
 """Pruebas para src.patterns.compiler."""
 
+import re
+
 import pytest
 
 from src.patterns.compiler import (
     PatternSpec,
     CompiledPattern,
     CompileError,
+    RenderError,
     compile_pattern,
     compile_patterns,
+    render_folder_name,
 )
 
 
@@ -69,3 +73,81 @@ def test_compile_patterns_devuelve_lista():
     assert len(compiladas) == 2
     assert compiladas[0].program == "Power BI"
     assert compiladas[1].program == "Excel"
+
+
+def test_render_folder_name_reconstruye_desde_el_patron():
+    compiled = compile_pattern(
+        PatternSpec(program="Power BI", pattern="G{número}-Power BI")
+    )
+    assert render_folder_name(compiled, {"numero": "2"}) == "G2-Power BI"
+
+
+def test_render_folder_name_admite_placeholder_sin_tilde():
+    compiled = compile_pattern(
+        PatternSpec(program="Power BI", pattern="G{numero}-Power BI")
+    )
+    assert render_folder_name(compiled, {"numero": "12"}) == "G12-Power BI"
+
+
+def test_render_folder_name_con_letra_y_palabra():
+    compiled = compile_pattern(
+        PatternSpec(
+            program="Python",
+            pattern="Python-{letra}{número}-{palabra}-G1",
+        )
+    )
+    assert (
+        render_folder_name(
+            compiled,
+            {"letra": "A", "numero": "3", "palabra": "curso2024"},
+        )
+        == "Python-A3-curso2024-G1"
+    )
+
+
+def test_render_folder_name_sin_placeholders():
+    compiled = compile_pattern(
+        PatternSpec(program="Excel", pattern="Excel - G3")
+    )
+    assert render_folder_name(compiled, {}) == "Excel - G3"
+
+
+def test_render_folder_name_falta_un_valor():
+    compiled = compile_pattern(
+        PatternSpec(program="Power BI", pattern="G{número}-Power BI")
+    )
+    with pytest.raises(RenderError, match="Falta el valor"):
+        render_folder_name(compiled, {})
+
+
+def test_render_folder_name_rechaza_tipo_incorrecto():
+    with pytest.raises(RenderError, match="CompiledPattern"):
+        render_folder_name("no es un patrón", {})
+
+
+def test_render_folder_name_rechaza_separador_en_el_resultado():
+    compiled = CompiledPattern(
+        program="X",
+        source="A/B",
+        regex=re.compile("A/B"),
+        placeholders=(),
+    )
+    with pytest.raises(RenderError, match="separador"):
+        render_folder_name(compiled, {})
+
+
+def test_render_folder_name_rechaza_nombre_vacio():
+    compiled = CompiledPattern(
+        program="X",
+        source="   ",
+        regex=re.compile("   "),
+        placeholders=(),
+    )
+    with pytest.raises(RenderError, match="vacío"):
+        render_folder_name(compiled, {})
+
+
+@pytest.mark.parametrize("pattern", ["A/B", "A\\B"])
+def test_el_patron_no_puede_contener_separadores_de_ruta(pattern):
+    with pytest.raises(CompileError, match="no puede contener"):
+        compile_pattern(PatternSpec(program="X", pattern=pattern))

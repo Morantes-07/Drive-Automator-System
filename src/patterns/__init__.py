@@ -11,8 +11,10 @@ from .compiler import (
     PatternSpec,
     CompiledPattern,
     CompileError,
+    RenderError,
     compile_pattern,
     compile_patterns,
+    render_folder_name,
 )
 from .matcher import (
     FileMatch,
@@ -30,8 +32,10 @@ __all__ = [
     "PatternSpec",
     "CompiledPattern",
     "CompileError",
+    "RenderError",
     "compile_pattern",
     "compile_patterns",
+    "render_folder_name",
     "FileMatch",
     "MatchReport",
     "match_file",

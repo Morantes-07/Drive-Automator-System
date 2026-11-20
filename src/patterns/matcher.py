@@ -12,7 +12,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from .compiler import CompiledPattern
+from .compiler import CompiledPattern, render_folder_name
 
 @dataclass(frozen=True)
 class FileMatch:
@@ -23,6 +23,8 @@ class FileMatch:
     program: str | None = None
     values: dict[str, str] = field(default_factory=dict)
     candidates: tuple[str, ...] = field(default_factory=tuple)
+    matched_text: str | None = None
+    folder_name: str | None = None
 
 @dataclass(frozen=True)
 class MatchReport:
@@ -63,11 +65,14 @@ def match_file(file_name: str, patterns: list[CompiledPattern]) -> FileMatch:
 
     if len(hits) == 1:
         pattern, coincidence = hits[0]
+        values = coincidence.groupdict()
         return FileMatch(
             file_name=file_name,
             status="matched",
             program=pattern.program,
-            values=coincidence.groupdict(),
+            values=values,
+            matched_text=coincidence.group(0),
+            folder_name=render_folder_name(pattern, values),
         )
 
     return FileMatch(

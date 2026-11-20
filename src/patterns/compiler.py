@@ -41,6 +41,9 @@ class CompiledPattern:
 class CompileError(ValueError):
     """Error al compilar una definición de patrón."""
 
+class RenderError(ValueError):
+    """Error al reconstruir el nombre de una carpeta desde un patrón."""
+
 def compile_pattern(spec: PatternSpec) -> CompiledPattern:
     """Compila un PatternSpec en una regex sin anclas, con IGNORECASE.
 
@@ -54,6 +57,11 @@ def compile_pattern(spec: PatternSpec) -> CompiledPattern:
     if not spec.pattern or not spec.pattern.strip():
         raise CompileError(
             f"El patrón no puede estar vacío para '{spec.program}'"
+        )
+    if "/" in spec.pattern or "\\" in spec.pattern:
+        raise CompileError(
+            f"El patrón de '{spec.program}' no puede contener '/' ni '\\': "
+            f"{spec.pattern}"
         )
 
     tokens = tokenize(spec.pattern)
@@ -129,3 +137,57 @@ def compile_patterns(specs: list[PatternSpec]) -> list[CompiledPattern]:
         seen_programs.add(key_program)
         compiled.append(compile_pattern(spec))
     return compiled
+
+def render_folder_name(
+    compiled: CompiledPattern, values: dict[str, str]
+) -> str:
+    """Reconstruye el nombre de la subcarpeta a partir del patrón compilado.
+
+    Los literales se conservan tal como se escribieron y cada placeholder se
+    sustituye por el valor capturado durante el match. Así, un patrón
+    ``G{número}-Power BI`` con el valor ``2`` genera siempre ``G2-Power BI``,
+    sin importar cómo esté escrito el nombre del archivo original.
+
+    Args:
+        compiled: Patrón ya compilado.
+        values: Valores capturados por el match, con claves canónicas.
+
+    Returns:
+        Nombre de carpeta válido, sin separadores de ruta.
+
+    Raises:
+        RenderError: Si falta un valor, el nombre queda vacío o contiene
+            ``/`` o ``\\``.
+    """
+    if not isinstance(compiled, CompiledPattern):
+        raise RenderError(
+            "Se esperaba un CompiledPattern, se recibió "
+            f"{type(compiled).__name__}"
+        )
+
+    parts: list[str] = []
+    for kind, text in tokenize(compiled.source):
+        if kind == "literal":
+            parts.append(text)
+            continue
+
+        key = normalize(text)
+        if key not in values:
+            raise RenderError(
+                f"Falta el valor del placeholder '{text}' para el patrón "
+                f"de '{compiled.program}': {compiled.source}"
+            )
+        parts.append(str(values[key]))
+
+    name = "".join(parts).strip()
+    if not name:
+        raise RenderError(
+            f"El patrón de '{compiled.program}' genera un nombre de carpeta "
+            f"vacío: {compiled.source}"
+        )
+    if "/" in name or "\\" in name:
+        raise RenderError(
+            f"El nombre de carpeta generado contiene un separador de ruta: "
+            f"'{name}'"
+        )
+    return name

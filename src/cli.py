@@ -6,21 +6,11 @@ Se mantiene como alternativa a la interfaz gráfica (``python -m src.main
 
 from src.authentication.auth import get_credentials
 from src.drive.drive_client import get_service, list_files
+from src.drive.queries import QUERY_OWNED
 from src.utils.dataframes import build_df
 from src.utils.path_management import find_root_project
 
 BASE_DIR = find_root_project()  # Carpeta raíz del proyecto
-
-# Query de archivos propios
-QUERY_OWNED = (
-    "'me' in owners and trashed = false "
-    "and mimeType != 'application/vnd.google-apps.folder'"
-)
-# Query de archivos compartidos (pendiente de integrar en el flujo)
-QUERY_SHARED = (
-    "sharedWithMe = true and trashed = false "
-    "and mimeType != 'application/vnd.google-apps.folder'"
-)
 
 
 def run_cli() -> None:

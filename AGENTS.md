@@ -19,6 +19,7 @@
 - Commit, print, or log `credentials.json` or `token.json`.
 - Commit without asking for confirmation
 - Remove `owners` or `parents` from `FIELDS` in `drive_client.py` (it breaks `build_df`).
+- Implement a function that is not covered by unit tests
 
 ## Architecture
 - `find_root_project()` locates the repo root regardless of the cwd.
@@ -31,4 +32,4 @@
 - Auth uses Chrome (incognito) at a hard-coded Windows path; it fails if Chrome isn't there.
 
 ## Not yet wired up
-- `QUERY_SHARED`, `list_folders`, `get_root_id`, `processing.py`, and `gspread`.
+- `QUERY_SHARED`, `processing.py`, and `gspread`.

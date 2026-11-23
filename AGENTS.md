@@ -32,4 +32,4 @@
 - Auth uses Chrome (incognito) at a hard-coded Windows path; it fails if Chrome isn't there.
 
 ## Not yet wired up
-- `QUERY_SHARED`, `processing.py`, and `gspread`.
+- `QUERY_SHARED` and `gspread`.

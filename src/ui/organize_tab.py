@@ -21,9 +21,13 @@ from src.drive.file_types import CATEGORY_LABELS, filter_files
 from src.drive.folder_tree import FolderTreeModel
 from src.drive.queries import QUERY_OWNED
 from src.programs import ProgramStore
+from src.runtime_settings import RuntimeSettings
 from src.workflow.organizer import (
+    FolderCreationResult,
+    FolderError,
     OrganizationPlan,
     OrganizationReport,
+    PlannedFile,
     build_plan,
     create_missing_folders,
     execute_plan,
@@ -45,6 +49,7 @@ STATUS_LABELS: dict[str, str] = {
 COLUMNS = ("archivo", "programa", "subcarpeta", "estado", "detalle")
 
 ReloadCallback = Callable[[], None]
+DryRunChangeCallback = Callable[[bool], None]
 
 
 class OrganizeTab(ctk.CTkFrame):
@@ -56,6 +61,9 @@ class OrganizeTab(ctk.CTkFrame):
         theme: Tema compartido de la aplicación.
         on_reload: Se llama para recargar el árbol de Drive después de crear
             carpetas o mover archivos.
+        settings: Ajustes mutables de la sesión. Si se omite, se crea uno con
+            el valor de ``config.DRY_RUN``.
+        on_dry_run_change: Se llama cuando cambia el modo de simulación.
     """
 
     def __init__(
@@ -65,12 +73,17 @@ class OrganizeTab(ctk.CTkFrame):
         *,
         theme: Theme = DEFAULT_THEME,
         on_reload: ReloadCallback | None = None,
+        settings: RuntimeSettings | None = None,
+        on_dry_run_change: DryRunChangeCallback | None = None,
     ):
         super().__init__(master, fg_color="transparent")
 
         self._store = store
         self._theme = theme
         self._on_reload = on_reload
+        self._settings = settings or RuntimeSettings(dry_run=DRY_RUN)
+        self._on_dry_run_change = on_dry_run_change
+        self._dry_run_var = tk.BooleanVar(value=self._settings.dry_run)
         self._model: FolderTreeModel | None = None
         self._plan: OrganizationPlan | None = None
         self._busy = False
@@ -243,16 +256,77 @@ class OrganizeTab(ctk.CTkFrame):
         )
         self._status_label.grid(row=0, column=1, sticky="w", padx=12)
 
+        self._dry_run_switch = ctk.CTkSwitch(
+            bar,
+            text="",
+            width=40,
+            command=self._on_dry_run_toggle,
+            variable=self._dry_run_var,
+            onvalue=True,
+            offvalue=False,
+            progress_color=theme.pair("accent"),
+            fg_color=theme.pair("border"),
+            button_color=theme.pair("panel"),
+            button_hover_color=theme.pair("border"),
+        )
+        self._dry_run_switch.grid(
+            row=0, column=2, sticky="e", padx=(0, 8)
+        )
+
         self._dry_run_label = ctk.CTkLabel(
             bar,
-            text="DRY_RUN activo" if DRY_RUN else "DRY_RUN desactivado",
+            text="",
             font=theme.font(11, "bold"),
-            text_color=theme.pair(
-                "warning" if DRY_RUN else "success"
-            ),
+            text_color=theme.pair("warning"),
             anchor="e",
         )
-        self._dry_run_label.grid(row=0, column=2, sticky="e")
+        self._dry_run_label.grid(row=0, column=3, sticky="e")
+        self._update_dry_run_display()
+
+    def _on_dry_run_toggle(self) -> None:
+        """Cambia el modo de simulación desde el switch."""
+        if self._busy:
+            self._dry_run_var.set(self._settings.dry_run)
+            return
+        dry_run = bool(self._dry_run_var.get())
+        if not dry_run:
+            confirmed = messagebox.askyesno(
+                "Desactivar la simulación",
+                "Vas a desactivar la prueba en seco.\n\n"
+                "Las próximas carpetas y movimientos se aplicarán de "
+                "verdad en Google Drive.\n\n"
+                "¿Quieres continuar?",
+                parent=self.winfo_toplevel(),
+            )
+            if not confirmed:
+                self._dry_run_var.set(True)
+                return
+        self._set_dry_run(dry_run)
+
+    def _set_dry_run(self, dry_run: bool) -> None:
+        """Fija el modo y sincroniza el switch con el resto de la app."""
+        self._settings.dry_run = dry_run
+        self._update_dry_run_display()
+        if self._on_dry_run_change is not None:
+            self._on_dry_run_change(dry_run)
+
+    def _update_dry_run_display(self) -> None:
+        """Pinta el estado actual de la prueba en seco."""
+        if not hasattr(self, "_dry_run_label"):
+            return
+        dry_run = self._settings.dry_run
+        self._dry_run_label.configure(
+            text=(
+                "PRUEBA EN SECO: ACTIVADA"
+                if dry_run
+                else "PRUEBA EN SECO: DESACTIVADA"
+            ),
+            text_color=self._theme.pair(
+                "warning" if dry_run else "success"
+            ),
+        )
+        if bool(self._dry_run_var.get()) != dry_run:
+            self._dry_run_var.set(dry_run)
 
     def _build_table(self) -> None:
         theme = self._theme
@@ -463,7 +537,7 @@ class OrganizeTab(ctk.CTkFrame):
                 "No hay archivos listos para mover.", "warning"
             )
             return
-        if not DRY_RUN:
+        if not self._settings.dry_run:
             confirmed = messagebox.askyesno(
                 "Organizar archivos",
                 f"¿Mover {ready} archivos a sus subcarpetas?",
@@ -484,7 +558,7 @@ class OrganizeTab(ctk.CTkFrame):
                 "No faltan carpetas por crear.", "muted"
             )
             return
-        if not DRY_RUN:
+        if not self._settings.dry_run:
             confirmed = messagebox.askyesno(
                 "Crear carpetas y mover",
                 f"¿Crear {missing} carpetas y mover {total} archivos?",
@@ -498,10 +572,11 @@ class OrganizeTab(ctk.CTkFrame):
         plan = self._plan
         if plan is None:
             return
+        dry_run = self._settings.dry_run
         self._busy = True
         self._show_message(
             "Simulando la organización…"
-            if DRY_RUN
+            if dry_run
             else "Organizando archivos…",
             "warning",
         )
@@ -509,7 +584,7 @@ class OrganizeTab(ctk.CTkFrame):
         generation = self._generation
         threading.Thread(
             target=self._execute_worker,
-            args=(create_missing, plan, generation),
+            args=(create_missing, plan, generation, dry_run),
             daemon=True,
         ).start()
 
@@ -518,107 +593,149 @@ class OrganizeTab(ctk.CTkFrame):
         create_missing: bool,
         plan: OrganizationPlan,
         generation: int,
+        dry_run: bool,
     ) -> None:
         """Crea carpetas (si hace falta) y mueve los archivos."""
         try:
-            folder_ids: dict[tuple[str, str], str] = {}
             service = None
-            if not DRY_RUN:
+            if not dry_run:
                 credentials = get_credentials()
                 service = get_service(credentials)
 
-            if create_missing and DRY_RUN:
+            if create_missing and dry_run:
                 # En simulación se usan ids ficticios para que el reporte
                 # cuente también los archivos cuya carpeta se crearía.
-                folder_ids = {
-                    (missing.parent_id, missing.name): (
-                        f"dry-run:{index}"
-                    )
-                    for index, missing in enumerate(
-                        plan.missing_folders
-                    )
-                }
+                creation = FolderCreationResult(
+                    created={
+                        (missing.parent_id, missing.name): (
+                            f"dry-run:{index}"
+                        )
+                        for index, missing in enumerate(
+                            plan.missing_folders
+                        )
+                    },
+                    errors=(),
+                )
             elif create_missing:
-                folder_ids = create_missing_folders(
+                creation = create_missing_folders(
                     service, plan, dry_run=False
                 )
+            else:
+                creation = FolderCreationResult(created={}, errors=())
 
+            folder_errors = {
+                (error.parent_id, error.name): error.message
+                for error in creation.errors
+            }
             report = execute_plan(
                 service,
                 plan,
-                folder_ids=folder_ids,
-                dry_run=DRY_RUN,
+                folder_ids=dict(creation.created),
+                dry_run=dry_run,
+                folder_errors=folder_errors,
             )
         except Exception as exc:
-            self._schedule(self._on_execute_error, exc, generation)
+            self._schedule(
+                self._on_execute_error, exc, generation, dry_run
+            )
             return
         self._schedule(
-            self._on_execute_done, report, plan, create_missing, generation
+            self._on_execute_done, report, creation, generation
         )
 
     def _on_execute_done(
         self,
         report: OrganizationReport,
-        plan: OrganizationPlan,
-        created_folders: bool,
+        creation: FolderCreationResult,
         generation: int,
     ) -> None:
         self._busy = False
+        if not report.dry_run:
+            # Una ejecución real siempre vuelve al modo seguro.
+            self._set_dry_run(True)
         if generation != self._generation:
             self._update_buttons()
             return
 
-        self._refresh_table()
+        self._refresh_table(report)
         self._update_summary()
         self._update_buttons()
 
         moved = len(report.moved)
         errors = len(report.errors)
+        created = len(creation.created)
+        failed = len(creation.errors)
         if report.dry_run:
-            if created_folders:
+            if created:
                 message = (
-                    f"Simulación: se crearían "
-                    f"{len(plan.missing_folders)} carpetas y se moverían "
-                    f"{moved} archivos."
+                    f"Simulación: se crearían {created} carpetas y se "
+                    f"moverían {moved} archivos."
                 )
             else:
                 message = f"Simulación: se moverían {moved} archivos."
         else:
             message = f"Se movieron {moved} archivos."
-            if created_folders:
-                message += (
-                    f" Se crearon {len(plan.missing_folders)} carpetas."
-                )
+            if created:
+                message += f" Se crearon {created} carpetas."
+        if failed:
+            message += f" No se pudieron crear {failed} carpetas."
         if errors:
             message += f" {errors} errores."
 
+        if creation.errors:
+            self._show_folder_errors(creation.errors)
+
         if (
             not report.dry_run
-            and (report.moved or created_folders)
+            and (report.moved or creation.created)
             and self._on_reload is not None
         ):
             self._on_reload()
 
         self._show_message(
-            message, "success" if not errors else "warning"
+            message,
+            "success" if not errors and not failed else "warning",
         )
 
-    def _on_execute_error(self, exc: Exception, generation: int) -> None:
+    def _show_folder_errors(
+        self, errors: tuple[FolderError, ...]
+    ) -> None:
+        """Muestra un aviso con las carpetas que no se pudieron crear."""
+        lines = [
+            f"• {error.name} ({error.parent_path})\n"
+            f"  Motivo: {error.message}"
+            for error in errors
+        ]
+        messagebox.showwarning(
+            "Carpetas no creadas",
+            "No se pudieron crear estas carpetas:\n\n"
+            + "\n\n".join(lines),
+            parent=self.winfo_toplevel(),
+        )
+
+    def _on_execute_error(
+        self, exc: Exception, generation: int, dry_run: bool
+    ) -> None:
         self._busy = False
+        if not dry_run:
+            # La ejecución real falló, pero el modo seguro debe recuperarse.
+            self._set_dry_run(True)
         self._update_buttons()
         if generation != self._generation:
             return
-        if not DRY_RUN and self._on_reload is not None:
+        if not dry_run and self._on_reload is not None:
             # Una creación parcial pudo dejar carpetas nuevas en Drive.
             self._on_reload()
-        if DRY_RUN:
+        if dry_run:
             message = f"Simulación fallida: {exc}"
         else:
             message = f"No se pudo organizar: {exc}"
         self._show_message(message, "danger")
 
     # -- tabla y resumen ---------------------------------------------------
-    def _refresh_table(self) -> None:
+    def _refresh_table(
+        self, report: OrganizationReport | None = None
+    ) -> None:
         rows = self.tree.get_children("")
         if rows:
             self.tree.delete(*rows)
@@ -629,18 +746,33 @@ class OrganizeTab(ctk.CTkFrame):
             )
             return
 
+        results: dict[str, PlannedFile] = {}
+        if report is not None:
+            for group in (
+                report.moved,
+                report.pending,
+                report.errors,
+                report.already_in_place,
+                report.ambiguous,
+                report.unmatched,
+            ):
+                for item in group:
+                    if item.file_id:
+                        results[item.file_id] = item
+
         self._empty_label.place_forget()
         for index, item in enumerate(self._plan.files):
+            shown = results.get(item.file_id, item)
             self.tree.insert(
                 "",
                 "end",
                 iid=str(index),
                 values=(
-                    item.file_name,
-                    item.program or "",
-                    item.folder_name or "",
-                    STATUS_LABELS.get(item.status, item.status),
-                    item.message or "",
+                    shown.file_name,
+                    shown.program or "",
+                    shown.folder_name or "",
+                    STATUS_LABELS.get(shown.status, shown.status),
+                    shown.message or "",
                 ),
             )
 
@@ -694,6 +826,9 @@ class OrganizeTab(ctk.CTkFrame):
                 if missing and not self._busy
                 else "disabled"
             )
+        )
+        self._dry_run_switch.configure(
+            state="disabled" if self._busy else "normal"
         )
 
     def _clear_plan(self) -> None:

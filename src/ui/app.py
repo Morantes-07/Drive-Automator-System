@@ -16,6 +16,7 @@ import customtkinter as ctk
 from src.config import DRY_RUN
 from src.drive.folder_tree import FolderTreeModel
 from src.programs import ProgramStore
+from src.runtime_settings import RuntimeSettings
 
 from .organize_tab import OrganizeTab
 from .programs_tab import ProgramsTab
@@ -45,6 +46,7 @@ class DriveOrganizerApp(ctk.CTk):
         self._loading_drive = False
         self.model: FolderTreeModel | None = None
         self.store = ProgramStore()
+        self.settings = RuntimeSettings(dry_run=DRY_RUN)
 
         self.title("Organizador de Drive")
         self._apply_window_geometry()
@@ -156,7 +158,7 @@ class DriveOrganizerApp(ctk.CTk):
         )
         self._tabs.grid(row=1, column=0, sticky="nsew", padx=24, pady=(0, 16))
 
-        tab = self._tabs.add("Programas")
+        tab = self._tabs.add("Gestión de programas")
         tab.grid_columnconfigure(0, weight=1)
         tab.grid_rowconfigure(0, weight=1)
 
@@ -168,7 +170,7 @@ class DriveOrganizerApp(ctk.CTk):
         )
         self.programs_tab.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
-        organize = self._tabs.add("Organizar")
+        organize = self._tabs.add("Organización")
         organize.grid_columnconfigure(0, weight=1)
         organize.grid_rowconfigure(0, weight=1)
 
@@ -177,6 +179,8 @@ class DriveOrganizerApp(ctk.CTk):
             self.store,
             theme=theme,
             on_reload=self.reload_drive,
+            settings=self.settings,
+            on_dry_run_change=self._on_dry_run_change,
         )
         self.organize_tab.grid(
             row=0, column=0, sticky="nsew", padx=10, pady=10
@@ -278,8 +282,16 @@ class DriveOrganizerApp(ctk.CTk):
     def _update_summary(self) -> None:
         total = len(self.store)
         programas = "1 programa" if total == 1 else f"{total} programas"
-        dry_run = "DRY_RUN activo" if DRY_RUN else "DRY_RUN desactivado"
+        dry_run = (
+            "PRUEBA EN SECO: ACTIVADA"
+            if self.settings.dry_run
+            else "PRUEBA EN SECO: DESACTIVADA"
+        )
         self._summary_label.configure(text=f"{programas}  ·  {dry_run}")
+
+    def _on_dry_run_change(self, _dry_run: bool) -> None:
+        """Refresca el resumen cuando cambia el modo de simulación."""
+        self._update_summary()
 
     def _set_status(self, text: str, kind: str = "muted") -> None:
         key = kind if kind in ("danger", "success", "warning") else "muted"

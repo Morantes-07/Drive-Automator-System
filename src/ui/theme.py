@@ -18,6 +18,12 @@ from tkinter import ttk
 
 FONT_FAMILY = "Segoe UI"
 
+#: Puntos que se suman a todos los tamaños de fuente de la aplicación.
+FONT_SIZE_OFFSET = 2
+
+#: Tamaño que CustomTkinter usa cuando un widget no recibe ``font``.
+DEFAULT_FONT_SIZE = ctk.ThemeManager.theme["CTkFont"]["size"]
+
 #: Estilo ttk que usan todas las tablas y árboles de la aplicación.
 TREE_STYLE = "Organizador.Treeview"
 
@@ -116,17 +122,26 @@ class Theme:
     # -- tipografía --------------------------------------------------------
     def font(self, size: int = 12, weight: str = "normal") -> ctk.CTkFont:
         """Fuente para un widget de CustomTkinter."""
-        return ctk.CTkFont(family=FONT_FAMILY, size=size, weight=weight)
+        return ctk.CTkFont(
+            family=FONT_FAMILY,
+            size=size + FONT_SIZE_OFFSET,
+            weight=weight,
+        )
 
     @staticmethod
     def tk_font(size: int = 10, weight: str = "normal") -> tuple[str, int, str]:
         """Fuente para un widget ttk (no admite CTkFont)."""
-        return (FONT_FAMILY, size, weight)
+        return (FONT_FAMILY, size + FONT_SIZE_OFFSET, weight)
 
     # -- aplicación --------------------------------------------------------
     def apply(self) -> None:
         """Aplica el modo a CustomTkinter y reinstala el estilo del árbol."""
         ctk.set_appearance_mode(self._mode)
+        # Los widgets que no reciben ``font`` usan el tamaño por defecto de
+        # CustomTkinter; también se les suma el desplazamiento global.
+        ctk.ThemeManager.theme["CTkFont"]["size"] = (
+            DEFAULT_FONT_SIZE + FONT_SIZE_OFFSET
+        )
         self.apply_ttk()
 
     def apply_ttk(self) -> None:

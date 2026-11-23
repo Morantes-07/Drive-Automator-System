@@ -2,11 +2,10 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from src.drive.folder_tree import FolderTreeModel
 from src.programs import ProgramDefinition, ProgramStore
 from src.workflow.organizer import (
+    FolderError,
     MissingFolder,
     OrganizationPlan,
     PlannedFile,
@@ -262,6 +261,41 @@ def test_build_plan_usa_la_ruta_real_del_destino():
     assert item.destination_path == "Mi Drive/Programs/Power BI"
 
 
+def test_build_plan_encuentra_carpeta_con_tildes():
+    store_tildes = ProgramStore()
+    store_tildes.add(
+        ProgramDefinition(
+            program="Código",
+            pattern="Código de {palabra}",
+            destination_path="Mi Drive/Programs/Power BI",
+            destination_id="powerbi",
+        )
+    )
+    folders = FOLDERS + [
+        {
+            "id": "auto",
+            "name": "Código de Automatización",
+            "parents": ["powerbi"],
+        },
+    ]
+    plan = build_plan(
+        [
+            archivo(
+                name=(
+                    "texto_random Código de automatización "
+                    "texto_random.pdf"
+                )
+            )
+        ],
+        modelo(folders),
+        store_tildes,
+    )
+    item = plan.files[0]
+    assert item.status == "ready"
+    assert item.folder_id == "auto"
+    assert item.folder_name == "Código de automatización"
+
+
 def test_plan_propiedades_agrupan_estados():
     plan = OrganizationPlan(
         files=(
@@ -298,10 +332,11 @@ def test_create_missing_folders_dry_run_no_llama_a_la_api():
         ),
     )
     with patch("src.workflow.organizer.create_folder") as create:
-        created = create_missing_folders(
+        result = create_missing_folders(
             MagicMock(), plan, dry_run=True
         )
-    assert created == {}
+    assert result.created == {}
+    assert result.errors == ()
     create.assert_not_called()
 
 
@@ -321,14 +356,15 @@ def test_create_missing_folders_crea_y_devuelve_ids():
         "src.workflow.organizer.create_folder",
         return_value={"id": "nueva"},
     ) as create:
-        created = create_missing_folders(
+        result = create_missing_folders(
             service, plan, dry_run=False
         )
     create.assert_called_once_with(service, "G3-Power BI", "powerbi")
-    assert created == {("powerbi", "G3-Power BI"): "nueva"}
+    assert result.created == {("powerbi", "G3-Power BI"): "nueva"}
+    assert result.errors == ()
 
 
-def test_create_missing_folders_falla_si_no_hay_id():
+def test_create_missing_folders_reporta_id_vacio_como_error():
     plan = OrganizationPlan(
         files=(),
         missing_folders=(
@@ -343,10 +379,61 @@ def test_create_missing_folders_falla_si_no_hay_id():
         "src.workflow.organizer.create_folder",
         return_value={},
     ):
-        with pytest.raises(ValueError, match="id"):
-            create_missing_folders(
-                MagicMock(), plan, dry_run=False
-            )
+        result = create_missing_folders(
+            MagicMock(), plan, dry_run=False
+        )
+    assert result.created == {}
+    assert len(result.errors) == 1
+    assert result.errors[0].name == "G3-Power BI"
+    assert "id" in result.errors[0].message
+
+
+def test_create_missing_folders_continua_si_una_falla():
+    plan = OrganizationPlan(
+        files=(),
+        missing_folders=(
+            MissingFolder(
+                name="G3-Power BI",
+                parent_id="powerbi",
+                parent_path="Mi Drive/Programs/Power BI",
+            ),
+            MissingFolder(
+                name="G4-Power BI",
+                parent_id="powerbi",
+                parent_path="Mi Drive/Programs/Power BI",
+            ),
+            MissingFolder(
+                name="G5-Power BI",
+                parent_id="powerbi",
+                parent_path="Mi Drive/Programs/Power BI",
+            ),
+        ),
+    )
+    service = MagicMock()
+    with patch(
+        "src.workflow.organizer.create_folder",
+        side_effect=[
+            {"id": "nueva-3"},
+            RuntimeError("boom"),
+            {"id": "nueva-5"},
+        ],
+    ) as create:
+        result = create_missing_folders(
+            service, plan, dry_run=False
+        )
+    assert create.call_count == 3
+    assert result.created == {
+        ("powerbi", "G3-Power BI"): "nueva-3",
+        ("powerbi", "G5-Power BI"): "nueva-5",
+    }
+    assert result.errors == (
+        FolderError(
+            name="G4-Power BI",
+            parent_id="powerbi",
+            parent_path="Mi Drive/Programs/Power BI",
+            message="boom",
+        ),
+    )
 
 
 def test_execute_plan_mueve_archivos_listos():
@@ -399,6 +486,32 @@ def test_execute_plan_pendientes_sin_carpeta():
         report = execute_plan(MagicMock(), plan, dry_run=False)
     move.assert_not_called()
     assert report.pending == (item,)
+
+
+def test_execute_plan_anota_pendientes_por_carpeta_fallida():
+    item = PlannedFile(
+        file_id="f1",
+        file_name="G3-Power BI.mp4",
+        parent_ids=("root",),
+        destination_id="powerbi",
+        folder_name="G3-Power BI",
+        status="missing_folder",
+        message="La subcarpeta todavía no existe.",
+    )
+    plan = OrganizationPlan(files=(item,), missing_folders=())
+    with patch("src.workflow.organizer.move_file") as move:
+        report = execute_plan(
+            MagicMock(),
+            plan,
+            dry_run=False,
+            folder_errors={("powerbi", "G3-Power BI"): "boom"},
+        )
+    move.assert_not_called()
+    assert len(report.pending) == 1
+    assert report.pending[0].status == "missing_folder"
+    assert "No se pudo crear la subcarpeta: boom" in (
+        report.pending[0].message
+    )
 
 
 def test_execute_plan_mueve_pendientes_con_carpeta_creada():

@@ -131,3 +131,27 @@ def test_ambiguous_no_tiene_texto_ni_subcarpeta():
     res = match_file("X5.txt", pats)
     assert res.matched_text is None
     assert res.folder_name is None
+
+
+def test_match_conserva_tildes_en_la_subcarpeta():
+    pats = compile_patterns([
+        PatternSpec(program="Código", pattern="Código de {palabra}"),
+    ])
+    res = match_file(
+        "texto_random Código de automatización texto_random.pdf", pats
+    )
+    assert res.status == "matched"
+    assert res.values == {"palabra": "automatización"}
+    assert res.matched_text == "Código de automatización"
+    assert res.folder_name == "Código de automatización"
+
+
+def test_match_con_tildes_es_case_insensitive():
+    pats = compile_patterns([
+        PatternSpec(program="Código", pattern="Código de {palabra}"),
+    ])
+    res = match_file(
+        "texto_random código de automatización texto_random.pdf", pats
+    )
+    assert res.status == "matched"
+    assert res.folder_name == "Código de automatización"

@@ -4,17 +4,20 @@ Un placeholder es una etiqueta entre llaves que se reemplaza por una expresión
 regular durante la compilación. Por ahora se admiten tres placeholders simples:
 
 - {número} / {numero}: uno o más dígitos (0-9).
-- {letra}: una sola letra, mayúscula o minúscula.
-- {palabra}: una o más letras y números, sin guiones.
+- {letra}: una sola letra ASCII (A-Z, a-z).
+- {palabra}: una o más letras y números Unicode, sin guiones ni guión bajo.
 """
 
 import re
 import unicodedata
 
 PLACEHOLDERS: dict[str, str] = {
+    # Uno o más números
     "numero": r"\d+",
+    # Solo letras ASCII: no admite tildes ni ñ.
     "letra": r"[A-Za-z]",
-    "palabra": r"[A-Za-z0-9]+",
+    # \w cubre letras Unicode (tildes, ñ, etc.) y dígitos. Se excluye "_".
+    "palabra": r"[^\W_]+",
 }
 
 PLACEHOLDER_RE = re.compile(r"\{([^}]+)\}")

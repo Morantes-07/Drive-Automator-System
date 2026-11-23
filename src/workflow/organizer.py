@@ -4,8 +4,8 @@ El flujo se divide en tres pasos:
 
 1. ``build_plan`` cruza los archivos con los patrones y el árbol de carpetas.
    No toca la API: solo decide qué se puede mover y qué carpetas faltan.
-2. ``create_missing_folders`` crea las subcarpetas pendientes, si el usuario
-   lo confirma.
+2. ``create_missing_folders`` intenta crear cada subcarpeta pendiente y
+   devuelve las creadas junto con los fallos, sin abortar el resto.
 3. ``execute_plan`` mueve los archivos y devuelve un reporte por estado.
 
 Todas las funciones respetan ``dry_run``: con ``True`` no se crea ni se mueve
@@ -67,6 +67,24 @@ class MissingFolder:
     name: str
     parent_id: str
     parent_path: str
+
+
+@dataclass(frozen=True, slots=True)
+class FolderError:
+    """Subcarpeta que no se pudo crear en Drive."""
+
+    name: str
+    parent_id: str
+    parent_path: str
+    message: str
+
+
+@dataclass(frozen=True, slots=True)
+class FolderCreationResult:
+    """Resultado de intentar crear todas las subcarpetas pendientes."""
+
+    created: Mapping[tuple[str, str], str]
+    errors: tuple[FolderError, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -365,35 +383,51 @@ def create_missing_folders(
     service,
     plan: OrganizationPlan,
     dry_run: bool = True,
-) -> dict[tuple[str, str], str]:
-    """Crea las subcarpetas que faltan y devuelve sus ids.
+) -> FolderCreationResult:
+    """Crea las subcarpetas que faltan y reporta los fallos por carpeta.
+
+    Un error al crear una carpeta no impide intentar las demás. Los archivos
+    de las carpetas fallidas se quedarán pendientes y no se moverán.
 
     Args:
         service: Servicio de Drive autenticado.
         plan: Plan generado por ``build_plan``.
-        dry_run: Si es ``True``, no crea nada y devuelve un diccionario vacío.
+        dry_run: Si es ``True``, no crea nada.
 
     Returns:
-        Mapa ``(parent_id, folder_name) -> folder_id`` de las carpetas
-        creadas.
-
-    Raises:
-        ValueError: Si Drive no devuelve el id de una carpeta creada.
+        Resultado con el mapa ``(parent_id, folder_name) -> folder_id`` de
+        las carpetas creadas y la lista de fallos.
     """
     created: dict[tuple[str, str], str] = {}
+    errors: list[FolderError] = []
     if dry_run:
-        return created
+        return FolderCreationResult(created=created, errors=())
 
     for missing in plan.missing_folders:
-        folder = create_folder(service, missing.name, missing.parent_id)
-        folder_id = str(folder.get("id") or "").strip()
-        if not folder_id:
-            raise ValueError(
-                "Drive no devolvió el id de la carpeta "
-                f"'{missing.name}'."
+        try:
+            folder = create_folder(service, missing.name, missing.parent_id)
+            folder_id = str(folder.get("id") or "").strip()
+            if not folder_id:
+                raise ValueError(
+                    "Drive no devolvió el id de la carpeta "
+                    f"'{missing.name}'."
+                )
+        except Exception as exc:
+            errors.append(
+                FolderError(
+                    name=missing.name,
+                    parent_id=missing.parent_id,
+                    parent_path=missing.parent_path,
+                    message=str(exc),
+                )
             )
-        created[(missing.parent_id, missing.name)] = folder_id
-    return created
+        else:
+            created[(missing.parent_id, missing.name)] = folder_id
+
+    return FolderCreationResult(
+        created=created,
+        errors=tuple(errors),
+    )
 
 
 def execute_plan(
@@ -401,6 +435,7 @@ def execute_plan(
     plan: OrganizationPlan,
     folder_ids: dict[tuple[str, str], str] | None = None,
     dry_run: bool = True,
+    folder_errors: Mapping[tuple[str, str], str] | None = None,
 ) -> OrganizationReport:
     """Mueve los archivos del plan y devuelve el reporte.
 
@@ -415,11 +450,15 @@ def execute_plan(
         plan: Plan generado por ``build_plan``.
         folder_ids: Mapa de carpetas creadas.
         dry_run: Si es ``True``, solo simula el movimiento.
+        folder_errors: Motivos de las carpetas que no se pudieron crear,
+            indexados por ``(parent_id, folder_name)``. Los archivos
+            afectados quedan pendientes con el motivo en su detalle.
 
     Returns:
         Reporte con los archivos agrupados por resultado.
     """
     folder_ids = folder_ids or {}
+    folder_errors = folder_errors or {}
     moved: list[PlannedFile] = []
     already_in_place: list[PlannedFile] = []
     pending: list[PlannedFile] = []
@@ -450,7 +489,20 @@ def execute_plan(
             )
 
         if target_id is None:
-            pending.append(item)
+            key = (item.destination_id or "", item.folder_name or "")
+            reason = folder_errors.get(key)
+            if reason:
+                pending.append(
+                    replace(
+                        item,
+                        message=(
+                            "No se pudo crear la subcarpeta: "
+                            f"{reason}"
+                        ),
+                    )
+                )
+            else:
+                pending.append(item)
             continue
 
         if dry_run:

@@ -10,14 +10,58 @@ regular durante la compilación. Por ahora se admiten tres placeholders simples:
 
 import re
 import unicodedata
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class PlaceholderInfo:
+    """Información visible de un placeholder del catálogo.
+
+    Attributes:
+        key: Clave canónica, sin tildes y en minúsculas.
+        label: Etiqueta que se muestra al usuario, entre llaves.
+        fragment: Expresión regular que representa el placeholder.
+        description: Explicación breve de qué captura.
+        example: Ejemplo de texto que acepta.
+    """
+
+    key: str
+    label: str
+    fragment: str
+    description: str
+    example: str
+
+
+#: Catálogo único del que salen tanto las expresiones regulares como la ayuda.
+PLACEHOLDER_INFOS: tuple[PlaceholderInfo, ...] = (
+    PlaceholderInfo(
+        key="numero",
+        label="{número}",
+        # Uno o más números
+        fragment=r"\d+",
+        description="Uno o más dígitos (0-9)",
+        example="12",
+    ),
+    PlaceholderInfo(
+        key="letra",
+        label="{letra}",
+        # Solo letras ASCII: no admite tildes ni ñ.
+        fragment=r"[A-Za-z]",
+        description="Una letra ASCII (sin ñ ni tildes)",
+        example="B",
+    ),
+    PlaceholderInfo(
+        key="palabra",
+        label="{palabra}",
+        # \w cubre letras Unicode (tildes, ñ, etc.) y dígitos. Se excluye "_".
+        fragment=r"[^\W_]+",
+        description="Letras y números, sin guiones",
+        example="Lección",
+    ),
+)
 
 PLACEHOLDERS: dict[str, str] = {
-    # Uno o más números
-    "numero": r"\d+",
-    # Solo letras ASCII: no admite tildes ni ñ.
-    "letra": r"[A-Za-z]",
-    # \w cubre letras Unicode (tildes, ñ, etc.) y dígitos. Se excluye "_".
-    "palabra": r"[^\W_]+",
+    info.key: info.fragment for info in PLACEHOLDER_INFOS
 }
 
 PLACEHOLDER_RE = re.compile(r"\{([^}]+)\}")
@@ -41,10 +85,10 @@ def fragment(name: str) -> str:
     """
     key = normalize(name)
     if key not in PLACEHOLDERS:
-        valid_ones = ", ".join(sorted(PLACEHOLDERS))
+        valid_ones = ", ".join(info.label for info in PLACEHOLDER_INFOS)
         raise UnknownPlaceholderError(
             f"Placeholder desconocido: '{name}'. "
-            f"Placeholderes válidos: {valid_ones}"
+            f"Placeholders válidos: {valid_ones}"
         )
     return PLACEHOLDERS[key]
 

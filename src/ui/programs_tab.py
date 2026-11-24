@@ -7,15 +7,23 @@ a mano o elegirse con el modal de selección.
 
 from __future__ import annotations
 
-from tkinter import messagebox, ttk
+from tkinter import TclError, messagebox, ttk
 from typing import Callable
 
 import customtkinter as ctk
 
 from src.drive.folder_tree import AmbiguousPathError, FolderTreeModel
+from src.patterns import (
+    PlaceholderInfo,
+    PlaceholderQuery,
+    apply_suggestion,
+    find_placeholder_query,
+    suggest_placeholders,
+)
 from src.programs import ProgramDefinition, ProgramStore, ProgramStoreError
 
 from .folder_picker import pick_folder
+from .suggestion_box import PlaceholderSuggestionBox
 from .theme import DEFAULT_THEME, TREE_STYLE, Theme
 
 ChangeCallback = Callable[[ProgramStore], None]
@@ -46,6 +54,8 @@ class ProgramsTab(ctk.CTkFrame):
         self._on_change = on_change
         self._model: FolderTreeModel | None = None
         self._edit_index: int | None = None
+        self._suggestion_query: PlaceholderQuery | None = None
+        self._suggestion_text: str | None = None
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -186,6 +196,7 @@ class ProgramsTab(ctk.CTkFrame):
             card,
             text=(
                 "El patrón admite {número}, {letra} y {palabra}. "
+                "Escribe \'{\' para ver qué captura cada uno.\n"
                 "La carpeta destino se guarda como ruta lógica."
             ),
             font=theme.font(11),
@@ -243,12 +254,141 @@ class ProgramsTab(ctk.CTkFrame):
             row=7, column=0, columnspan=4, sticky="w", padx=16, pady=(0, 12)
         )
 
-        for entry in (
-            self._program_entry,
-            self._pattern_entry,
-            self._destination_entry,
-        ):
+        for entry in (self._program_entry, self._destination_entry):
             entry.bind("<Return>", lambda _event: self._submit())
+
+        self._suggestions = PlaceholderSuggestionBox(
+            card,
+            theme=theme,
+            on_pick=self._insert_suggestion,
+        )
+        self._pattern_entry.bind("<Return>", self._on_pattern_return)
+        self._pattern_entry.bind("<KeyRelease>", self._on_pattern_key_release)
+        self._pattern_entry.bind("<ButtonRelease-1>", self._on_pattern_click)
+        self._pattern_entry.bind("<Down>", self._on_pattern_down)
+        self._pattern_entry.bind("<Up>", self._on_pattern_up)
+        self._pattern_entry.bind("<Tab>", self._on_pattern_tab)
+        self._pattern_entry.bind("<Escape>", self._on_pattern_escape)
+        self._pattern_entry.bind("<FocusOut>", self._on_pattern_focus_out)
+        self._pattern_entry.bind("<Configure>", self._on_pattern_configure)
+
+    # -- sugerencias de placeholders --------------------------------------
+    def _update_suggestions(self) -> None:
+        """Recalcula y muestra las sugerencias para el cursor actual."""
+        text = self._pattern_entry.get()
+        query = find_placeholder_query(
+            text,
+            self._pattern_entry.index("insert"),
+        )
+        if query is None:
+            self._hide_suggestions()
+            return
+
+        items = suggest_placeholders(query)
+        if not items:
+            self._hide_suggestions()
+            return
+
+        self._suggestion_query = query
+        self._suggestion_text = text
+        self._suggestions.show(items)
+        self._position_suggestions()
+
+    def _position_suggestions(self) -> None:
+        """Coloca la lista justo debajo del campo de patrón."""
+        if not self._suggestions.is_visible:
+            return
+        card = self._pattern_entry.master
+        card_width = card.winfo_width()
+        relwidth = (
+            self._pattern_entry.winfo_width() / card_width
+            if card_width > 0
+            else 1.0
+        )
+        self._suggestions.place(
+            x=self._pattern_entry.winfo_x(),
+            y=(
+                self._pattern_entry.winfo_y()
+                + self._pattern_entry.winfo_height()
+                + 2
+            ),
+            relwidth=relwidth,
+        )
+        self._suggestions.lift()
+
+    def _hide_suggestions(self) -> None:
+        self._suggestion_query = None
+        self._suggestion_text = None
+        self._suggestions.hide()
+
+    def _insert_suggestion(self, info: PlaceholderInfo) -> None:
+        """Sustituye el placeholder en curso por el elegido."""
+        query = self._suggestion_query
+        text = self._suggestion_text
+        if query is None or text is None:
+            return
+
+        new_text, caret = apply_suggestion(text, query, info)
+        self._hide_suggestions()
+        self._pattern_entry.delete(0, "end")
+        self._pattern_entry.insert(0, new_text)
+        self._pattern_entry.icursor(caret)
+        self._pattern_entry.focus_set()
+
+    def _on_pattern_key_release(self, event) -> None:
+        if event.keysym in {"Up", "Down", "Tab", "Escape", "Return"}:
+            return
+        self._update_suggestions()
+
+    def _on_pattern_click(self, _event) -> None:
+        self.after_idle(self._update_suggestions)
+
+    def _on_pattern_down(self, _event):
+        if not self._suggestions.is_visible:
+            return None
+        self._suggestions.move_selection(1)
+        return "break"
+
+    def _on_pattern_up(self, _event):
+        if not self._suggestions.is_visible:
+            return None
+        self._suggestions.move_selection(-1)
+        return "break"
+
+    def _on_pattern_tab(self, _event):
+        if not self._suggestions.is_visible:
+            return None
+        self._suggestions.accept()
+        return "break"
+
+    def _on_pattern_escape(self, _event):
+        if not self._suggestions.is_visible:
+            return None
+        self._hide_suggestions()
+        return "break"
+
+    def _on_pattern_return(self, _event):
+        if self._suggestions.is_visible:
+            self._suggestions.accept()
+            return "break"
+        self._submit()
+        return "break"
+
+    def _on_pattern_focus_out(self, _event) -> None:
+        # Se retrasa el cierre para que un clic en una sugerencia llegue antes
+        # de que el campo pierda el foco.
+        self.after(120, self._hide_suggestions_if_unfocused)
+
+    def _hide_suggestions_if_unfocused(self) -> None:
+        try:
+            focused = self.focus_get()
+            if focused is not self._pattern_entry._entry:
+                self._hide_suggestions()
+        except TclError:
+            return
+
+    def _on_pattern_configure(self, _event) -> None:
+        self._position_suggestions()
 
     def _build_table(self) -> None:
         theme = self._theme
@@ -393,6 +533,7 @@ class ProgramsTab(ctk.CTkFrame):
 
         item = self._store.get(index)
         self._edit_index = index
+        self._hide_suggestions()
         self._set_entry(self._program_entry, item.program)
         self._set_entry(self._pattern_entry, item.pattern)
         self._set_entry(self._destination_entry, item.destination_path)
@@ -406,6 +547,7 @@ class ProgramsTab(ctk.CTkFrame):
 
     # -- acciones ----------------------------------------------------------
     def _submit(self) -> None:
+        self._hide_suggestions()
         definition = ProgramDefinition(
             program=self._program_entry.get(),
             pattern=self._pattern_entry.get(),
@@ -459,6 +601,7 @@ class ProgramsTab(ctk.CTkFrame):
         self._show_message("", "muted")
 
     def _clear_form(self) -> None:
+        self._hide_suggestions()
         for entry in (
             self._program_entry,
             self._pattern_entry,

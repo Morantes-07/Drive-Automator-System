@@ -2,10 +2,19 @@
 
 from .placeholders import (
     PLACEHOLDERS,
+    PLACEHOLDER_INFOS,
+    PlaceholderInfo,
     UnknownPlaceholderError,
     normalize,
     fragment,
     tokenize,
+)
+from .suggestions import (
+    PlaceholderQuery,
+    apply_suggestion,
+    find_placeholder_query,
+    move_selection,
+    suggest_placeholders,
 )
 from .compiler import (
     PatternSpec,
@@ -25,10 +34,17 @@ from .matcher import (
 
 __all__ = [
     "PLACEHOLDERS",
+    "PLACEHOLDER_INFOS",
+    "PlaceholderInfo",
     "UnknownPlaceholderError",
     "normalize",
     "fragment",
     "tokenize",
+    "PlaceholderQuery",
+    "apply_suggestion",
+    "find_placeholder_query",
+    "move_selection",
+    "suggest_placeholders",
     "PatternSpec",
     "CompiledPattern",
     "CompileError",

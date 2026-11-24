@@ -6,6 +6,7 @@ import pytest
 
 from src.patterns.placeholders import (
     PLACEHOLDERS,
+    PLACEHOLDER_INFOS,
     UnknownPlaceholderError,
     normalize,
     fragment,
@@ -24,6 +25,27 @@ def test_placeholders_built_in():
     assert PLACEHOLDERS["numero"] == r"\d+"
     assert PLACEHOLDERS["letra"] == r"[A-Za-z]"
     assert PLACEHOLDERS["palabra"] == r"[^\W_]+"
+
+
+def test_placeholders_se_deriva_del_catalogo():
+    assert PLACEHOLDERS == {
+        info.key: info.fragment for info in PLACEHOLDER_INFOS
+    }
+
+
+def test_catalogo_tiene_etiquetas_y_textos_completos():
+    labels = [info.label for info in PLACEHOLDER_INFOS]
+    assert len(labels) == len(set(labels))
+    for info in PLACEHOLDER_INFOS:
+        assert info.label == "{" + info.label.strip("{}") + "}"
+        assert normalize(info.label.strip("{}")) == info.key
+        assert info.description
+        assert info.example
+
+
+def test_cada_etiqueta_del_catalogo_tiene_fragmento():
+    for info in PLACEHOLDER_INFOS:
+        assert fragment(info.label.strip("{}")) == info.fragment
 
 
 def test_fragment_devuelve_regex_correcta():
@@ -54,6 +76,14 @@ def test_fragment_letra_solo_acepta_ascii():
 
 def test_fragment_desconocido_lanza_error():
     with pytest.raises(UnknownPlaceholderError, match="desconocido"):
+        fragment("fecha")
+
+
+def test_error_de_placeholder_lista_las_etiquetas_validas():
+    with pytest.raises(
+        UnknownPlaceholderError,
+        match=r"Placeholders válidos: \{número\}, \{letra\}, \{palabra\}",
+    ):
         fragment("fecha")
 
 

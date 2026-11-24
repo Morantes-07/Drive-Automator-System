@@ -18,6 +18,7 @@ from src.drive.folder_tree import FolderTreeModel
 from src.programs import ProgramStore
 from src.runtime_settings import RuntimeSettings
 
+from .icon import apply_window_icon, set_app_user_model_id
 from .organize_tab import OrganizeTab
 from .programs_tab import ProgramsTab
 from .theme import (
@@ -38,6 +39,9 @@ class DriveOrganizerApp(ctk.CTk):
 
     def __init__(self, theme: Theme = DEFAULT_THEME):
         super().__init__()
+        # CustomTkinter pone su propio icono 200 ms después de iniciar, pero
+        # solo si nadie llamó a iconbitmap antes: hacerlo aquí lo evita.
+        apply_window_icon(self)
 
         self._theme = theme
         self._theme.apply()
@@ -312,5 +316,8 @@ class DriveOrganizerApp(ctk.CTk):
 
 def run_app() -> None:
     """Abre la ventana principal y entra en el bucle de eventos."""
+    # La identidad debe registrarse antes de crear la ventana para que Windows
+    # no asocie el botón de la barra de tareas con el intérprete de Python.
+    set_app_user_model_id()
     app = DriveOrganizerApp()
     app.mainloop()

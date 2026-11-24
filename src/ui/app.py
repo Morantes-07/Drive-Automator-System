@@ -104,7 +104,7 @@ class DriveOrganizerApp(ctk.CTk):
 
         ctk.CTkLabel(
             header,
-            text="Clasifica los archivos de cada programa en su carpeta.",
+            text="Clasifica los archivos de cada programa en su carpeta según un patrón específico.",
             font=theme.font(12),
             text_color=theme.pair("muted"),
             anchor="w",

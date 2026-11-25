@@ -7,8 +7,8 @@ Decisiones tomadas en fase de pruebas:
   campo vacío bajo la última fila.
 - La fuente por defecto de CustomTkinter es Roboto, que no está instalada en
   Windows: se usa Segoe UI explícita.
-- Los colores que reciben los widgets de CustomTkinter se pasan como pares
-  (claro, oscuro) para que el cambio de modo sea automático.
+- La aplicación usa una sola paleta, así que los widgets reciben un color
+  directo en lugar del par de colores que acepta CustomTkinter.
 """
 
 from __future__ import annotations
@@ -36,29 +36,8 @@ WINDOW_WIDTH = 1120
 WINDOW_HEIGHT = 820
 WINDOW_MIN_SIZE = (960, 640)
 
-#: Paletas por modo. Las claves se comparten entre ambos modos.
-LIGHT: dict[str, str] = {
-    "window": "#f2f2f5",
-    "panel": "#ffffff",
-    "panel_alt": "#ededf1",
-    "border": "#d8d8de",
-    "text": "#1a1a20",
-    "muted": "#5f5f6b",
-    "accent": "#2563eb",
-    "accent_hover": "#1d4ed8",
-    "accent_text": "#ffffff",
-    "success": "#15803d",
-    "danger": "#b91c1c",
-    "warning": "#b45309",
-    "tree_bg": "#ffffff",
-    "tree_fg": "#1a1a20",
-    "tree_selection_bg": "#cfe3fb",
-    "tree_selection_fg": "#0f172a",
-    "tree_heading_bg": "#ededf1",
-    "tree_heading_fg": "#33333a",
-}
-
-DARK: dict[str, str] = {
+#: Única paleta de colores de la aplicación (modo oscuro).
+PALETTE: dict[str, str] = {
     "window": "#1a1a1e",
     "panel": "#232327",
     "panel_alt": "#2b2b31",
@@ -87,37 +66,10 @@ class Theme:
     cuando ya existe una ventana raíz.
     """
 
-    def __init__(self, mode: str = "dark"):
-        self._mode = mode if mode in ("dark", "light") else "dark"
-
-    @property
-    def mode(self) -> str:
-        return self._mode
-
-    @property
-    def is_dark(self) -> bool:
-        return self._mode == "dark"
-
-    def set_mode(self, mode: str) -> None:
-        """Cambia el modo de apariencia (``"dark"`` o ``"light"``)."""
-        if mode not in ("dark", "light"):
-            raise ValueError(f"Modo de apariencia desconocido: {mode!r}")
-        self._mode = mode
-
-    def toggle(self) -> str:
-        """Alterna entre claro y oscuro y devuelve el modo resultante."""
-        self.set_mode("light" if self.is_dark else "dark")
-        return self._mode
-
     # -- colores -----------------------------------------------------------
     def color(self, key: str) -> str:
-        """Color concreto del modo actual (para ttk y canvas)."""
-        palette = DARK if self.is_dark else LIGHT
-        return palette[key]
-
-    def pair(self, key: str) -> tuple[str, str]:
-        """Par (claro, oscuro) para los widgets de CustomTkinter."""
-        return (LIGHT[key], DARK[key])
+        """Color de la paleta oscura (para widgets, ttk y canvas)."""
+        return PALETTE[key]
 
     # -- tipografía --------------------------------------------------------
     def font(self, size: int = 12, weight: str = "normal") -> ctk.CTkFont:
@@ -135,8 +87,8 @@ class Theme:
 
     # -- aplicación --------------------------------------------------------
     def apply(self) -> None:
-        """Aplica el modo a CustomTkinter y reinstala el estilo del árbol."""
-        ctk.set_appearance_mode(self._mode)
+        """Fija el modo oscuro en CustomTkinter e instala el estilo del árbol."""
+        ctk.set_appearance_mode("dark")
         # Los widgets que no reciben ``font`` usan el tamaño por defecto de
         # CustomTkinter; también se les suma el desplazamiento global.
         ctk.ThemeManager.theme["CTkFont"]["size"] = (
@@ -145,11 +97,7 @@ class Theme:
         self.apply_ttk()
 
     def apply_ttk(self) -> None:
-        """Configura el tema ``clam`` y el estilo de tablas y árboles.
-
-        Se puede llamar varias veces (por ejemplo, al cambiar de modo): ttk
-        vuelve a pintar todos los widgets que usan ``TREE_STYLE``.
-        """
+        """Configura el tema ``clam`` y el estilo de tablas y árboles."""
         style = ttk.Style()
         style.theme_use("clam")
 
@@ -195,6 +143,6 @@ class Theme:
         )
 
 
-#: Tema compartido por toda la aplicación. La ventana principal lo actualiza
-#: al cambiar de modo y el resto de widgets leen de aquí sus colores.
+#: Tema compartido por toda la aplicación. La ventana principal lo aplica al
+#: construirse y el resto de widgets leen de aquí sus colores.
 DEFAULT_THEME = Theme()

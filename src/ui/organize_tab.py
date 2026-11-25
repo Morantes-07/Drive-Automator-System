@@ -152,8 +152,8 @@ class OrganizeTab(ctk.CTkFrame):
         theme = self._theme
         card = ctk.CTkFrame(
             self,
-            fg_color=theme.pair("panel"),
-            border_color=theme.pair("border"),
+            fg_color=theme.color("panel"),
+            border_color=theme.color("border"),
             border_width=1,
             corner_radius=12,
         )
@@ -165,7 +165,7 @@ class OrganizeTab(ctk.CTkFrame):
             card,
             text="Tipos de archivo",
             font=theme.font(15, "bold"),
-            text_color=theme.pair("text"),
+            text_color=theme.color("text"),
             anchor="w",
         ).grid(
             row=0,
@@ -180,7 +180,7 @@ class OrganizeTab(ctk.CTkFrame):
             card,
             text="Sin selección = todos los tipos. Puedes marcar varios.",
             font=theme.font(11),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
         ).grid(
             row=1,
@@ -202,11 +202,11 @@ class OrganizeTab(ctk.CTkFrame):
                 variable=variable,
                 command=self._on_category_change,
                 font=theme.font(11),
-                text_color=theme.pair("text"),
-                fg_color=theme.pair("accent"),
-                hover_color=theme.pair("accent_hover"),
-                border_color=theme.pair("border"),
-                checkmark_color=theme.pair("accent_text"),
+                text_color=theme.color("text"),
+                fg_color=theme.color("accent"),
+                hover_color=theme.color("accent_hover"),
+                border_color=theme.color("border"),
+                checkmark_color=theme.color("accent_text"),
             )
             check.grid(
                 row=row,
@@ -224,9 +224,9 @@ class OrganizeTab(ctk.CTkFrame):
             width=140,
             height=28,
             command=self._clear_categories,
-            fg_color=theme.pair("panel_alt"),
-            hover_color=theme.pair("border"),
-            text_color=theme.pair("text"),
+            fg_color=theme.color("panel_alt"),
+            hover_color=theme.color("border"),
+            text_color=theme.color("text"),
         )
         self._clear_categories_button.grid(
             row=rows,
@@ -249,9 +249,9 @@ class OrganizeTab(ctk.CTkFrame):
             width=150,
             height=32,
             command=self._scan,
-            fg_color=theme.pair("accent"),
-            hover_color=theme.pair("accent_hover"),
-            text_color=theme.pair("accent_text"),
+            fg_color=theme.color("accent"),
+            hover_color=theme.color("accent_hover"),
+            text_color=theme.color("accent_text"),
         )
         self._scan_button.grid(row=0, column=0, sticky="w")
 
@@ -259,7 +259,7 @@ class OrganizeTab(ctk.CTkFrame):
             bar,
             text="",
             font=theme.font(11),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
         )
         self._status_label.grid(row=0, column=1, sticky="w", padx=12)
@@ -272,10 +272,10 @@ class OrganizeTab(ctk.CTkFrame):
             variable=self._dry_run_var,
             onvalue=True,
             offvalue=False,
-            progress_color=theme.pair("accent"),
-            fg_color=theme.pair("border"),
-            button_color=theme.pair("panel"),
-            button_hover_color=theme.pair("border"),
+            progress_color=theme.color("accent"),
+            fg_color=theme.color("border"),
+            button_color=theme.color("panel"),
+            button_hover_color=theme.color("border"),
         )
         self._dry_run_switch.grid(
             row=0, column=2, sticky="e", padx=(0, 8)
@@ -285,7 +285,7 @@ class OrganizeTab(ctk.CTkFrame):
             bar,
             text="",
             font=theme.font(11, "bold"),
-            text_color=theme.pair("warning"),
+            text_color=theme.color("warning"),
             anchor="e",
         )
         self._dry_run_label.grid(row=0, column=3, sticky="e")
@@ -329,7 +329,7 @@ class OrganizeTab(ctk.CTkFrame):
                 if dry_run
                 else "PRUEBA EN SECO: DESACTIVADA"
             ),
-            text_color=self._theme.pair(
+            text_color=self._theme.color(
                 "warning" if dry_run else "success"
             ),
         )
@@ -340,8 +340,8 @@ class OrganizeTab(ctk.CTkFrame):
         theme = self._theme
         card = ctk.CTkFrame(
             self,
-            fg_color=theme.pair("panel"),
-            border_color=theme.pair("border"),
+            fg_color=theme.color("panel"),
+            border_color=theme.color("border"),
             border_width=1,
             corner_radius=12,
         )
@@ -394,7 +394,7 @@ class OrganizeTab(ctk.CTkFrame):
             frame,
             text="Sin plan todavía.\nPulsa 'Escanear archivos'.",
             font=theme.font(12),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             justify="center",
         )
         self._empty_label.place(relx=0.5, rely=0.5, anchor="center")
@@ -409,7 +409,7 @@ class OrganizeTab(ctk.CTkFrame):
             footer,
             text="",
             font=theme.font(11),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
         )
         self._summary_label.grid(row=0, column=0, sticky="w")
@@ -420,9 +420,9 @@ class OrganizeTab(ctk.CTkFrame):
             width=120,
             height=32,
             command=self._organize,
-            fg_color=theme.pair("accent"),
-            hover_color=theme.pair("accent_hover"),
-            text_color=theme.pair("accent_text"),
+            fg_color=theme.color("accent"),
+            hover_color=theme.color("accent_hover"),
+            text_color=theme.color("accent_text"),
         )
         self._organize_button.grid(row=0, column=1, padx=(8, 0))
 
@@ -432,11 +432,11 @@ class OrganizeTab(ctk.CTkFrame):
             width=180,
             height=32,
             command=self._create_and_move,
-            fg_color=theme.pair("panel_alt"),
-            hover_color=theme.pair("border"),
+            fg_color=theme.color("panel_alt"),
+            hover_color=theme.color("border"),
             border_width=1,
-            border_color=theme.pair("border"),
-            text_color=theme.pair("text"),
+            border_color=theme.color("border"),
+            text_color=theme.color("text"),
         )
         self._create_button.grid(row=0, column=2, padx=(8, 0))
 
@@ -871,7 +871,7 @@ class OrganizeTab(ctk.CTkFrame):
         key = kind if kind in ("danger", "success", "warning") else "muted"
         self._status_label.configure(
             text=text,
-            text_color=self._theme.pair(key),
+            text_color=self._theme.color(key),
         )
 
     def _schedule(self, callback, *args) -> None:

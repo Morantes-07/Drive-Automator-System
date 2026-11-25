@@ -36,8 +36,8 @@ class PlaceholderSuggestionBox(ctk.CTkFrame):
     ):
         super().__init__(
             master,
-            fg_color=theme.pair("panel"),
-            border_color=theme.pair("border"),
+            fg_color=theme.color("panel"),
+            border_color=theme.color("border"),
             border_width=1,
             corner_radius=10,
         )
@@ -115,7 +115,7 @@ class PlaceholderSuggestionBox(ctk.CTkFrame):
                 row,
                 text=info.label,
                 font=self._theme.font(11, "bold"),
-                text_color=self._theme.pair("accent"),
+                text_color=self._theme.color("accent"),
                 anchor="w",
             )
             label.pack(side="left", padx=(10, 8), pady=4)
@@ -124,7 +124,7 @@ class PlaceholderSuggestionBox(ctk.CTkFrame):
                 row,
                 text=info.description,
                 font=self._theme.font(11),
-                text_color=self._theme.pair("muted"),
+                text_color=self._theme.color("muted"),
                 anchor="w",
             )
             description.pack(side="left", padx=(0, 10), pady=4)
@@ -161,7 +161,7 @@ class PlaceholderSuggestionBox(ctk.CTkFrame):
         for index, item in enumerate(self._items):
             self._rows[item.key].configure(
                 fg_color=(
-                    self._theme.pair("panel_alt")
+                    self._theme.color("panel_alt")
                     if index == self._selected
                     else "transparent"
                 )

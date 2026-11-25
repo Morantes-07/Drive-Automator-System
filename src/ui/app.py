@@ -56,7 +56,7 @@ class DriveOrganizerApp(ctk.CTk):
         self.title("Organizador de Drive")
         self._apply_window_geometry()
         self.minsize(*WINDOW_MIN_SIZE)
-        self.configure(fg_color=theme.pair("window"))
+        self.configure(fg_color=theme.color("window"))
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.report_callback_exception = self._report_callback_exception
 
@@ -103,7 +103,7 @@ class DriveOrganizerApp(ctk.CTk):
             header,
             text="Organizador de Drive",
             font=theme.font(24, "bold"),
-            text_color=theme.pair("text"),
+            text_color=theme.color("text"),
             anchor="w",
         ).grid(row=0, column=0, sticky="w")
 
@@ -111,7 +111,7 @@ class DriveOrganizerApp(ctk.CTk):
             header,
             text="Clasifica los archivos de cada programa en su carpeta según un patrón específico.",
             font=theme.font(12),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
         ).grid(row=1, column=0, sticky="w", pady=(2, 0))
 
@@ -123,11 +123,11 @@ class DriveOrganizerApp(ctk.CTk):
             values=["Oscuro", "Claro"],
             command=self._on_mode_change,
             font=theme.font(11),
-            selected_color=theme.pair("accent"),
-            selected_hover_color=theme.pair("accent_hover"),
-            unselected_color=theme.pair("panel_alt"),
-            unselected_hover_color=theme.pair("border"),
-            text_color=theme.pair("text"),
+            selected_color=theme.color("accent"),
+            selected_hover_color=theme.color("accent_hover"),
+            unselected_color=theme.color("panel_alt"),
+            unselected_hover_color=theme.color("border"),
+            text_color=theme.color("text"),
         )
         self._mode_control.set("Oscuro")
         self._mode_control.pack(side="left", padx=(0, 10))
@@ -138,11 +138,11 @@ class DriveOrganizerApp(ctk.CTk):
             width=130,
             height=32,
             command=self.reload_drive,
-            fg_color=theme.pair("panel_alt"),
-            hover_color=theme.pair("border"),
+            fg_color=theme.color("panel_alt"),
+            hover_color=theme.color("border"),
             border_width=1,
-            border_color=theme.pair("border"),
-            text_color=theme.pair("text"),
+            border_color=theme.color("border"),
+            text_color=theme.color("text"),
         )
         self._reload_button.pack(side="left")
 
@@ -150,15 +150,15 @@ class DriveOrganizerApp(ctk.CTk):
         theme = self._theme
         self._tabs = ctk.CTkTabview(
             self,
-            fg_color=theme.pair("panel"),
-            border_color=theme.pair("border"),
-            segmented_button_fg_color=theme.pair("panel_alt"),
-            segmented_button_selected_color=theme.pair("accent"),
-            segmented_button_selected_hover_color=theme.pair("accent_hover"),
-            segmented_button_unselected_color=theme.pair("panel_alt"),
-            segmented_button_unselected_hover_color=theme.pair("border"),
+            fg_color=theme.color("panel"),
+            border_color=theme.color("border"),
+            segmented_button_fg_color=theme.color("panel_alt"),
+            segmented_button_selected_color=theme.color("accent"),
+            segmented_button_selected_hover_color=theme.color("accent_hover"),
+            segmented_button_unselected_color=theme.color("panel_alt"),
+            segmented_button_unselected_hover_color=theme.color("border"),
             segmented_button_font=theme.font(12),
-            text_color=theme.pair("text"),
+            text_color=theme.color("text"),
             anchor="w",
         )
         self._tabs.grid(row=1, column=0, sticky="nsew", padx=24, pady=(0, 16))
@@ -194,7 +194,7 @@ class DriveOrganizerApp(ctk.CTk):
 
     def _build_status_bar(self) -> None:
         theme = self._theme
-        bar = ctk.CTkFrame(self, fg_color=theme.pair("panel"), corner_radius=0)
+        bar = ctk.CTkFrame(self, fg_color=theme.color("panel"), corner_radius=0)
         bar.grid(row=2, column=0, sticky="ew")
         bar.grid_columnconfigure(0, weight=1)
 
@@ -202,7 +202,7 @@ class DriveOrganizerApp(ctk.CTk):
             bar,
             text="Iniciando…",
             font=theme.font(11),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
         )
         self._status_label.grid(row=0, column=0, sticky="w", padx=24, pady=8)
@@ -211,7 +211,7 @@ class DriveOrganizerApp(ctk.CTk):
             bar,
             text="",
             font=theme.font(11),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="e",
         )
         self._summary_label.grid(row=0, column=1, sticky="e", padx=24, pady=8)
@@ -290,7 +290,7 @@ class DriveOrganizerApp(ctk.CTk):
     def _on_mode_change(self, value: str) -> None:
         self._theme.set_mode("light" if value == "Claro" else "dark")
         self._theme.apply()
-        self.configure(fg_color=self._theme.pair("window"))
+        self.configure(fg_color=self._theme.color("window"))
         self.programs_tab.apply_theme()
         self.organize_tab.apply_theme()
 
@@ -317,7 +317,7 @@ class DriveOrganizerApp(ctk.CTk):
         key = kind if kind in ("danger", "success", "warning") else "muted"
         self._status_label.configure(
             text=text,
-            text_color=self._theme.pair(key),
+            text_color=self._theme.color(key),
         )
 
     def _report_callback_exception(self, exc, value, tb) -> None:

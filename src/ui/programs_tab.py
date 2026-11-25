@@ -88,8 +88,8 @@ class ProgramsTab(ctk.CTkFrame):
         theme = self._theme
         card = ctk.CTkFrame(
             self,
-            fg_color=theme.pair("panel"),
-            border_color=theme.pair("border"),
+            fg_color=theme.color("panel"),
+            border_color=theme.color("border"),
             border_width=1,
             corner_radius=12,
         )
@@ -101,7 +101,7 @@ class ProgramsTab(ctk.CTkFrame):
             card,
             text="Definir programa",
             font=theme.font(15, "bold"),
-            text_color=theme.pair("text"),
+            text_color=theme.color("text"),
             anchor="w",
         ).grid(row=0, column=0, columnspan=4, sticky="w", padx=16, pady=(14, 0))
 
@@ -109,7 +109,7 @@ class ProgramsTab(ctk.CTkFrame):
             card,
             text="Asocia un patrón de nombre de archivo con la carpeta donde debe quedar.",
             font=theme.font(11),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
         ).grid(row=1, column=0, columnspan=4, sticky="w", padx=16, pady=(0, 12))
 
@@ -117,7 +117,7 @@ class ProgramsTab(ctk.CTkFrame):
             card,
             text="Programa",
             font=theme.font(11, "bold"),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
         ).grid(row=2, column=0, sticky="w", padx=(16, 6), pady=(0, 4))
 
@@ -125,7 +125,7 @@ class ProgramsTab(ctk.CTkFrame):
             card,
             text="Patrón",
             font=theme.font(11, "bold"),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
         ).grid(row=2, column=2, sticky="w", padx=(12, 6), pady=(0, 4))
 
@@ -134,9 +134,9 @@ class ProgramsTab(ctk.CTkFrame):
             height=34,
             font=theme.font(12),
             placeholder_text="Power BI",
-            border_color=theme.pair("border"),
-            fg_color=theme.pair("panel_alt"),
-            text_color=theme.pair("text"),
+            border_color=theme.color("border"),
+            fg_color=theme.color("panel_alt"),
+            text_color=theme.color("text"),
         )
         self._program_entry.grid(
             row=3, column=1, sticky="ew", padx=(0, 12), pady=(0, 2)
@@ -147,9 +147,9 @@ class ProgramsTab(ctk.CTkFrame):
             height=34,
             font=theme.font(12),
             placeholder_text="G{número}-Power BI",
-            border_color=theme.pair("border"),
-            fg_color=theme.pair("panel_alt"),
-            text_color=theme.pair("text"),
+            border_color=theme.color("border"),
+            fg_color=theme.color("panel_alt"),
+            text_color=theme.color("text"),
         )
         self._pattern_entry.grid(
             row=3, column=3, sticky="ew", padx=(0, 16), pady=(0, 2)
@@ -159,7 +159,7 @@ class ProgramsTab(ctk.CTkFrame):
             card,
             text="Carpeta destino",
             font=theme.font(11, "bold"),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
         ).grid(row=4, column=0, columnspan=4, sticky="w", padx=16, pady=(10, 4))
 
@@ -168,9 +168,9 @@ class ProgramsTab(ctk.CTkFrame):
             height=34,
             font=theme.font(12),
             placeholder_text="Mi Drive/Power BI/2024",
-            border_color=theme.pair("border"),
-            fg_color=theme.pair("panel_alt"),
-            text_color=theme.pair("text"),
+            border_color=theme.color("border"),
+            fg_color=theme.color("panel_alt"),
+            text_color=theme.color("text"),
         )
         self._destination_entry.grid(
             row=5, column=0, columnspan=3, sticky="ew", padx=(16, 12)
@@ -182,11 +182,11 @@ class ProgramsTab(ctk.CTkFrame):
             width=150,
             height=34,
             command=self._choose_destination,
-            fg_color=theme.pair("panel_alt"),
-            hover_color=theme.pair("border"),
+            fg_color=theme.color("panel_alt"),
+            hover_color=theme.color("border"),
             border_width=1,
-            border_color=theme.pair("border"),
-            text_color=theme.pair("text"),
+            border_color=theme.color("border"),
+            text_color=theme.color("text"),
         )
         self._destination_button.grid(
             row=5, column=3, sticky="ew", padx=(0, 16)
@@ -200,7 +200,7 @@ class ProgramsTab(ctk.CTkFrame):
                 "La carpeta destino se guarda como ruta lógica."
             ),
             font=theme.font(11),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
             justify="left",
             wraplength=540,
@@ -225,9 +225,9 @@ class ProgramsTab(ctk.CTkFrame):
             width=90,
             height=34,
             command=self._new,
-            fg_color=theme.pair("panel_alt"),
-            hover_color=theme.pair("border"),
-            text_color=theme.pair("text"),
+            fg_color=theme.color("panel_alt"),
+            hover_color=theme.color("border"),
+            text_color=theme.color("text"),
         )
         self._clear_button.pack(side="left", padx=(0, 8))
 
@@ -237,9 +237,9 @@ class ProgramsTab(ctk.CTkFrame):
             width=160,
             height=34,
             command=self._submit,
-            fg_color=theme.pair("accent"),
-            hover_color=theme.pair("accent_hover"),
-            text_color=theme.pair("accent_text"),
+            fg_color=theme.color("accent"),
+            hover_color=theme.color("accent_hover"),
+            text_color=theme.color("accent_text"),
         )
         self._submit_button.pack(side="left")
 
@@ -247,7 +247,7 @@ class ProgramsTab(ctk.CTkFrame):
             card,
             text="",
             font=theme.font(11),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
         )
         self._message_label.grid(
@@ -394,8 +394,8 @@ class ProgramsTab(ctk.CTkFrame):
         theme = self._theme
         card = ctk.CTkFrame(
             self,
-            fg_color=theme.pair("panel"),
-            border_color=theme.pair("border"),
+            fg_color=theme.color("panel"),
+            border_color=theme.color("border"),
             border_width=1,
             corner_radius=12,
         )
@@ -411,7 +411,7 @@ class ProgramsTab(ctk.CTkFrame):
             header,
             text="Programas definidos",
             font=theme.font(15, "bold"),
-            text_color=theme.pair("text"),
+            text_color=theme.color("text"),
             anchor="w",
         ).grid(row=0, column=0, sticky="w")
 
@@ -419,7 +419,7 @@ class ProgramsTab(ctk.CTkFrame):
             header,
             text="",
             font=theme.font(11),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="e",
         )
         self._count_label.grid(row=0, column=1, sticky="e")
@@ -459,7 +459,7 @@ class ProgramsTab(ctk.CTkFrame):
                 "Completa el formulario para añadir el primero."
             ),
             font=theme.font(12),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             justify="center",
         )
 
@@ -471,7 +471,7 @@ class ProgramsTab(ctk.CTkFrame):
             footer,
             text="Selecciona un programa de la lista para editarlo.",
             font=theme.font(11),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
         ).grid(row=0, column=0, sticky="w")
 
@@ -482,10 +482,10 @@ class ProgramsTab(ctk.CTkFrame):
             height=30,
             command=self._delete,
             fg_color="transparent",
-            hover_color=theme.pair("panel_alt"),
+            hover_color=theme.color("panel_alt"),
             border_width=1,
-            border_color=theme.pair("danger"),
-            text_color=theme.pair("danger"),
+            border_color=theme.color("danger"),
+            text_color=theme.color("danger"),
         )
         self._delete_button.grid(row=0, column=1, sticky="e")
 
@@ -689,7 +689,7 @@ class ProgramsTab(ctk.CTkFrame):
         key = kind if kind in ("danger", "success", "warning") else "muted"
         self._message_label.configure(
             text=text,
-            text_color=self._theme.pair(key),
+            text_color=self._theme.color(key),
         )
 
     def _notify_change(self) -> None:

@@ -101,7 +101,7 @@ class FolderExplorer(ctk.CTkFrame):
                 header,
                 text=label_text,
                 font=self._theme.font(12, "bold"),
-                text_color=self._theme.pair("text"),
+                text_color=self._theme.color("text"),
                 anchor="w",
             ).grid(row=0, column=0, sticky="w")
 
@@ -109,7 +109,7 @@ class FolderExplorer(ctk.CTkFrame):
                 header,
                 text="",
                 font=self._theme.font(11),
-                text_color=self._theme.pair("muted"),
+                text_color=self._theme.color("muted"),
                 anchor="e",
             )
             self._count_label.grid(row=0, column=1, sticky="e")

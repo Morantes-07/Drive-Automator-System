@@ -66,7 +66,7 @@ class BrowserPickerDialog(ctk.CTkToplevel):
         self.title("Elegir navegador")
         self.geometry(f"{DIALOG_WIDTH}x{DIALOG_HEIGHT}")
         self.minsize(500, 380)
-        self.configure(fg_color=theme.pair("window"))
+        self.configure(fg_color=theme.color("window"))
         self.protocol("WM_DELETE_WINDOW", self._cancel)
         self.bind("<Escape>", lambda _event: self._cancel())
 
@@ -90,7 +90,7 @@ class BrowserPickerDialog(ctk.CTkToplevel):
             header,
             text="Elige el navegador para iniciar sesión",
             font=theme.font(18, "bold"),
-            text_color=theme.pair("text"),
+            text_color=theme.color("text"),
             anchor="w",
         ).grid(row=0, column=0, sticky="w")
 
@@ -101,7 +101,7 @@ class BrowserPickerDialog(ctk.CTkToplevel):
                 "abrirá para autorizar la cuenta de Google."
             ),
             font=theme.font(11),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
             justify="left",
             wraplength=DIALOG_WIDTH - 60,
@@ -111,8 +111,8 @@ class BrowserPickerDialog(ctk.CTkToplevel):
         theme = self._theme
         panel = ctk.CTkScrollableFrame(
             self,
-            fg_color=theme.pair("panel"),
-            border_color=theme.pair("border"),
+            fg_color=theme.color("panel"),
+            border_color=theme.color("border"),
             border_width=1,
             corner_radius=10,
         )
@@ -130,9 +130,9 @@ class BrowserPickerDialog(ctk.CTkToplevel):
             value=CUSTOM_KEY,
             command=self._on_radio_change,
             font=theme.font(12),
-            text_color=theme.pair("text"),
-            fg_color=theme.pair("accent"),
-            hover_color=theme.pair("accent_hover"),
+            text_color=theme.color("text"),
+            fg_color=theme.color("accent"),
+            hover_color=theme.color("accent_hover"),
         )
         self._custom_radio.grid(
             row=next_row * 2,
@@ -147,11 +147,11 @@ class BrowserPickerDialog(ctk.CTkToplevel):
             text="Examinar…",
             width=110,
             command=self._choose_custom,
-            fg_color=theme.pair("panel_alt"),
-            hover_color=theme.pair("border"),
+            fg_color=theme.color("panel_alt"),
+            hover_color=theme.color("border"),
             border_width=1,
-            border_color=theme.pair("border"),
-            text_color=theme.pair("text"),
+            border_color=theme.color("border"),
+            text_color=theme.color("text"),
         ).grid(
             row=next_row * 2 + 1,
             column=0,
@@ -171,9 +171,9 @@ class BrowserPickerDialog(ctk.CTkToplevel):
             value=_option_key(option),
             command=self._on_radio_change,
             font=theme.font(12),
-            text_color=theme.pair("text"),
-            fg_color=theme.pair("accent"),
-            hover_color=theme.pair("accent_hover"),
+            text_color=theme.color("text"),
+            fg_color=theme.color("accent"),
+            hover_color=theme.color("accent_hover"),
         ).grid(
             row=index * 2,
             column=0,
@@ -191,7 +191,7 @@ class BrowserPickerDialog(ctk.CTkToplevel):
             parent,
             text=detail,
             font=theme.font(10),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
             justify="left",
             wraplength=DIALOG_WIDTH - 100,
@@ -208,7 +208,7 @@ class BrowserPickerDialog(ctk.CTkToplevel):
             self,
             text="",
             font=self._theme.font(10),
-            text_color=self._theme.pair("muted"),
+            text_color=self._theme.color("muted"),
             anchor="w",
             justify="left",
             wraplength=DIALOG_WIDTH - 60,
@@ -225,7 +225,7 @@ class BrowserPickerDialog(ctk.CTkToplevel):
             footer,
             text="",
             font=theme.font(11),
-            text_color=theme.pair("danger"),
+            text_color=theme.color("danger"),
             anchor="w",
         )
         self._message_label.grid(row=0, column=0, sticky="w")
@@ -235,9 +235,9 @@ class BrowserPickerDialog(ctk.CTkToplevel):
             text="Cancelar",
             width=110,
             command=self._cancel,
-            fg_color=theme.pair("panel_alt"),
-            hover_color=theme.pair("border"),
-            text_color=theme.pair("text"),
+            fg_color=theme.color("panel_alt"),
+            hover_color=theme.color("border"),
+            text_color=theme.color("text"),
         ).grid(row=0, column=1, padx=(8, 0))
 
         ctk.CTkButton(
@@ -245,9 +245,9 @@ class BrowserPickerDialog(ctk.CTkToplevel):
             text="Continuar",
             width=120,
             command=self._accept,
-            fg_color=theme.pair("accent"),
-            hover_color=theme.pair("accent_hover"),
-            text_color=theme.pair("accent_text"),
+            fg_color=theme.color("accent"),
+            hover_color=theme.color("accent_hover"),
+            text_color=theme.color("accent_text"),
         ).grid(row=0, column=2, padx=(8, 0))
 
     # -- API pública -------------------------------------------------------

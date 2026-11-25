@@ -57,7 +57,7 @@ class FolderPickerDialog(ctk.CTkToplevel):
         self.title(title)
         self.geometry(f"{DIALOG_WIDTH}x{DIALOG_HEIGHT}")
         self.minsize(560, 420)
-        self.configure(fg_color=theme.pair("window"))
+        self.configure(fg_color=theme.color("window"))
         self.protocol("WM_DELETE_WINDOW", self._cancel)
         self.bind("<Escape>", lambda _event: self._cancel())
 
@@ -72,7 +72,7 @@ class FolderPickerDialog(ctk.CTkToplevel):
             header,
             text="Elige la carpeta de destino",
             font=theme.font(18, "bold"),
-            text_color=theme.pair("text"),
+            text_color=theme.color("text"),
             anchor="w",
         ).grid(row=0, column=0, sticky="w")
 
@@ -80,14 +80,14 @@ class FolderPickerDialog(ctk.CTkToplevel):
             header,
             text="Se guardará la ruta lógica de la carpeta, no su id.",
             font=theme.font(11),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
         ).grid(row=1, column=0, sticky="w", pady=(2, 0))
 
         panel = ctk.CTkFrame(
             self,
-            fg_color=theme.pair("panel"),
-            border_color=theme.pair("border"),
+            fg_color=theme.color("panel"),
+            border_color=theme.color("border"),
             border_width=1,
             corner_radius=10,
         )
@@ -112,7 +112,7 @@ class FolderPickerDialog(ctk.CTkToplevel):
             self,
             text="Selección: (ninguna)",
             font=theme.font(11),
-            text_color=theme.pair("muted"),
+            text_color=theme.color("muted"),
             anchor="w",
             justify="left",
             wraplength=DIALOG_WIDTH - 60,
@@ -127,7 +127,7 @@ class FolderPickerDialog(ctk.CTkToplevel):
             footer,
             text="",
             font=theme.font(11),
-            text_color=theme.pair("danger"),
+            text_color=theme.color("danger"),
             anchor="w",
         )
         self._message_label.grid(row=0, column=0, sticky="w")
@@ -137,9 +137,9 @@ class FolderPickerDialog(ctk.CTkToplevel):
             text="Cancelar",
             width=110,
             command=self._cancel,
-            fg_color=theme.pair("panel_alt"),
-            hover_color=theme.pair("border"),
-            text_color=theme.pair("text"),
+            fg_color=theme.color("panel_alt"),
+            hover_color=theme.color("border"),
+            text_color=theme.color("text"),
         ).grid(row=0, column=1, padx=(8, 0))
 
         self._accept_button = ctk.CTkButton(
@@ -147,9 +147,9 @@ class FolderPickerDialog(ctk.CTkToplevel):
             text="Seleccionar",
             width=120,
             command=self._accept,
-            fg_color=theme.pair("accent"),
-            hover_color=theme.pair("accent_hover"),
-            text_color=theme.pair("accent_text"),
+            fg_color=theme.color("accent"),
+            hover_color=theme.color("accent_hover"),
+            text_color=theme.color("accent_text"),
         )
         self._accept_button.grid(row=0, column=2, padx=(8, 0))
 

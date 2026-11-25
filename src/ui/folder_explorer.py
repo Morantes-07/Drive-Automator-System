@@ -161,10 +161,6 @@ class FolderExplorer(ctk.CTkFrame):
         """Vuelve a construir la vista con el modelo actual."""
         self._reset()
 
-    def apply_theme(self) -> None:
-        """Reaplica el color de los elementos auxiliares tras cambiar de modo."""
-        self.tree.configure(style=TREE_STYLE)
-
     def selected_node(self) -> FolderNode | None:
         """Carpeta seleccionada, o None si no hay selección válida."""
         selection = self.tree.selection()

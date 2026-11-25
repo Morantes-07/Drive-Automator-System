@@ -118,20 +118,6 @@ class DriveOrganizerApp(ctk.CTk):
         controls = ctk.CTkFrame(header, fg_color="transparent")
         controls.grid(row=0, column=1, rowspan=2, sticky="e")
 
-        self._mode_control = ctk.CTkSegmentedButton(
-            controls,
-            values=["Oscuro", "Claro"],
-            command=self._on_mode_change,
-            font=theme.font(11),
-            selected_color=theme.color("accent"),
-            selected_hover_color=theme.color("accent_hover"),
-            unselected_color=theme.color("panel_alt"),
-            unselected_hover_color=theme.color("border"),
-            text_color=theme.color("text"),
-        )
-        self._mode_control.set("Oscuro")
-        self._mode_control.pack(side="left", padx=(0, 10))
-
         self._reload_button = ctk.CTkButton(
             controls,
             text="Recargar Drive",
@@ -287,13 +273,6 @@ class DriveOrganizerApp(ctk.CTk):
             pass
 
     # -- eventos -----------------------------------------------------------
-    def _on_mode_change(self, value: str) -> None:
-        self._theme.set_mode("light" if value == "Claro" else "dark")
-        self._theme.apply()
-        self.configure(fg_color=self._theme.color("window"))
-        self.programs_tab.apply_theme()
-        self.organize_tab.apply_theme()
-
     def _on_store_change(self, _store: ProgramStore) -> None:
         self._update_summary()
         if hasattr(self, "organize_tab"):

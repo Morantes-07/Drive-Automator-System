@@ -79,10 +79,6 @@ class ProgramsTab(ctk.CTkFrame):
         """Pone el foco en el campo del nombre del programa."""
         self._program_entry.focus_set()
 
-    def apply_theme(self) -> None:
-        """Reaplica los estilos que no se actualizan solos (ttk)."""
-        self.tree.configure(style=TREE_STYLE)
-
     # -- construcción de la interfaz --------------------------------------
     def _build_form(self) -> None:
         theme = self._theme

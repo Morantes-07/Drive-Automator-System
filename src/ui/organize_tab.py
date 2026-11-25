@@ -143,10 +143,6 @@ class OrganizeTab(ctk.CTkFrame):
                 "Los programas cambiaron. Vuelve a escanear.", "warning"
             )
 
-    def apply_theme(self) -> None:
-        """Reaplica el estilo del árbol tras cambiar de modo."""
-        self.tree.configure(style=TREE_STYLE)
-
     # -- construcción de la interfaz --------------------------------------
     def _build_filters(self) -> None:
         theme = self._theme

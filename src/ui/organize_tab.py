@@ -14,7 +14,11 @@ from typing import Callable
 
 import customtkinter as ctk
 
-from src.authentication.auth import get_credentials
+from src.authentication.auth import (
+    AuthenticationCancelled,
+    BrowserProvider,
+    get_credentials,
+)
 from src.config import DRY_RUN
 from src.drive.drive_client import get_service, list_files
 from src.drive.file_types import CATEGORY_LABELS, filter_files
@@ -64,6 +68,8 @@ class OrganizeTab(ctk.CTkFrame):
         settings: Ajustes mutables de la sesión. Si se omite, se crea uno con
             el valor de ``config.DRY_RUN``.
         on_dry_run_change: Se llama cuando cambia el modo de simulación.
+        browser_provider: Se llama si hay que regenerar el token para elegir
+            el navegador de autenticación.
     """
 
     def __init__(
@@ -75,6 +81,7 @@ class OrganizeTab(ctk.CTkFrame):
         on_reload: ReloadCallback | None = None,
         settings: RuntimeSettings | None = None,
         on_dry_run_change: DryRunChangeCallback | None = None,
+        browser_provider: BrowserProvider | None = None,
     ):
         super().__init__(master, fg_color="transparent")
 
@@ -83,6 +90,7 @@ class OrganizeTab(ctk.CTkFrame):
         self._on_reload = on_reload
         self._settings = settings or RuntimeSettings(dry_run=DRY_RUN)
         self._on_dry_run_change = on_dry_run_change
+        self._browser_provider = browser_provider
         self._dry_run_var = tk.BooleanVar(value=self._settings.dry_run)
         self._model: FolderTreeModel | None = None
         self._plan: OrganizationPlan | None = None
@@ -489,7 +497,9 @@ class OrganizeTab(ctk.CTkFrame):
     ) -> None:
         """Lista, filtra y planifica sin tocar la interfaz."""
         try:
-            credentials = get_credentials()
+            credentials = get_credentials(
+                browser_provider=self._browser_provider
+            )
             service = get_service(credentials)
             files = list_files(service, QUERY_OWNED)
             files = [
@@ -524,6 +534,11 @@ class OrganizeTab(ctk.CTkFrame):
         self._busy = False
         self._update_buttons()
         if generation != self._generation:
+            return
+        if isinstance(exc, AuthenticationCancelled):
+            self._show_message(
+                "Autenticación cancelada. No se generó el token.", "warning"
+            )
             return
         self._show_message(f"No se pudo escanear Drive: {exc}", "danger")
 
@@ -599,7 +614,9 @@ class OrganizeTab(ctk.CTkFrame):
         try:
             service = None
             if not dry_run:
-                credentials = get_credentials()
+                credentials = get_credentials(
+                    browser_provider=self._browser_provider
+                )
                 service = get_service(credentials)
 
             if create_missing and dry_run:
@@ -722,6 +739,11 @@ class OrganizeTab(ctk.CTkFrame):
             self._set_dry_run(True)
         self._update_buttons()
         if generation != self._generation:
+            return
+        if isinstance(exc, AuthenticationCancelled):
+            self._show_message(
+                "Autenticación cancelada. No se generó el token.", "warning"
+            )
             return
         if not dry_run and self._on_reload is not None:
             # Una creación parcial pudo dejar carpetas nuevas en Drive.

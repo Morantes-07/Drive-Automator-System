@@ -18,6 +18,7 @@ from src.drive.folder_tree import FolderTreeModel
 from src.programs import ProgramStore
 from src.runtime_settings import RuntimeSettings
 
+from .browser_picker import pick_browser
 from .icon import apply_window_icon, set_app_user_model_id
 from .organize_tab import OrganizeTab
 from .programs_tab import ProgramsTab
@@ -185,6 +186,7 @@ class DriveOrganizerApp(ctk.CTk):
             on_reload=self.reload_drive,
             settings=self.settings,
             on_dry_run_change=self._on_dry_run_change,
+            browser_provider=self._provide_browser,
         )
         self.organize_tab.grid(
             row=0, column=0, sticky="nsew", padx=10, pady=10
@@ -215,6 +217,10 @@ class DriveOrganizerApp(ctk.CTk):
         self._summary_label.grid(row=0, column=1, sticky="e", padx=24, pady=8)
 
     # -- Drive -------------------------------------------------------------
+    def _provide_browser(self):
+        """Pide el navegador con el que se abrirá la autorización de Google."""
+        return pick_browser(self, theme=self._theme)
+
     def reload_drive(self) -> None:
         """Vuelve a conectar con Drive y recarga el árbol de carpetas."""
         if self._closing or self._loading_drive:
@@ -235,7 +241,9 @@ class DriveOrganizerApp(ctk.CTk):
             from src.authentication.auth import get_credentials
             from src.drive.drive_client import get_root_id, get_service, list_folders
 
-            credentials = get_credentials()
+            credentials = get_credentials(
+                browser_provider=self._provide_browser
+            )
             service = get_service(credentials)
             root_id = get_root_id(service)
             folders = list_folders(service)
@@ -259,6 +267,14 @@ class DriveOrganizerApp(ctk.CTk):
         self.programs_tab.set_model(None)
         self.organize_tab.set_model(None)
         self._reload_button.configure(state="normal")
+
+        from src.authentication.auth import AuthenticationCancelled
+
+        if isinstance(exc, AuthenticationCancelled):
+            self._set_status(
+                "Autenticación cancelada. No se generó el token.", "warning"
+            )
+            return
         self._set_status(f"No se pudo conectar con Drive: {exc}", "danger")
 
     def _schedule(self, callback, *args) -> None:

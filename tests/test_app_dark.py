@@ -7,7 +7,11 @@ from src.ui import app as app_module
 
 def test_ventana_no_ofrece_cambio_de_modo(monkeypatch):
     """La cabecera no incluye el selector claro/oscuro ni su evento."""
-    monkeypatch.setenv(app_module.OFFLINE_ENV, "1")
+    # La ventana programa reload_drive a los 250 ms; se anula para que la
+    # prueba no abra el flujo de autenticación de Google.
+    monkeypatch.setattr(
+        app_module.DriveOrganizerApp, "reload_drive", lambda self: None
+    )
 
     app = app_module.DriveOrganizerApp()
     try:

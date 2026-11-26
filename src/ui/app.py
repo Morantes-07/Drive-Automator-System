@@ -7,7 +7,6 @@ aplica en el hilo principal con ``after(0, ...)``.
 
 from __future__ import annotations
 
-import os
 import threading
 import traceback
 
@@ -29,10 +28,6 @@ from .theme import (
     WINDOW_WIDTH,
     Theme,
 )
-
-#: Si vale "1", la aplicación arranca sin conectar con Drive. Útil para
-#: desarrollar la interfaz sin abrir el flujo de autenticación.
-OFFLINE_ENV = "DRIVE_AUTOMATOR_OFFLINE"
 
 
 class DriveOrganizerApp(ctk.CTk):
@@ -67,14 +62,8 @@ class DriveOrganizerApp(ctk.CTk):
         self._build_body()
         self._build_status_bar()
         self._update_summary()
-
-        if os.environ.get(OFFLINE_ENV) == "1":
-            self._set_status(
-                "Modo sin conexión: las carpetas de Drive no se cargan.", "warning"
-            )
-        else:
-            # Se deja pintar la ventana antes de lanzar la autenticación.
-            self.after(250, self.reload_drive)
+        # Se deja pintar la ventana antes de lanzar la autenticación.
+        self.after(250, self.reload_drive)
 
     # -- construcción de la interfaz --------------------------------------
     def _apply_window_geometry(self) -> None:

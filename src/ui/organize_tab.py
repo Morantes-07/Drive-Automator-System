@@ -285,6 +285,20 @@ class OrganizeTab(ctk.CTkFrame):
             anchor="e",
         )
         self._dry_run_label.grid(row=0, column=3, sticky="e")
+
+        # Barra indeterminada: solo se muestra durante una organización real.
+        self._progress = ctk.CTkProgressBar(
+            bar,
+            height=8,
+            corner_radius=4,
+            mode="indeterminate",
+            fg_color=theme.color("border"),
+            progress_color=theme.color("accent"),
+        )
+        self._progress.grid(
+            row=1, column=0, columnspan=4, sticky="ew", pady=(8, 0)
+        )
+        self._progress.grid_remove()
         self._update_dry_run_display()
 
     def _on_dry_run_toggle(self) -> None:
@@ -591,6 +605,8 @@ class OrganizeTab(ctk.CTkFrame):
             else "Organizando archivos…",
             "warning",
         )
+        if not dry_run:
+            self._start_progress()
         self._update_buttons()
         generation = self._generation
         threading.Thread(
@@ -663,6 +679,7 @@ class OrganizeTab(ctk.CTkFrame):
         generation: int,
     ) -> None:
         self._busy = False
+        self._stop_progress()
         if not report.dry_run:
             # Una ejecución real siempre vuelve al modo seguro.
             self._set_dry_run(True)
@@ -730,6 +747,7 @@ class OrganizeTab(ctk.CTkFrame):
         self, exc: Exception, generation: int, dry_run: bool
     ) -> None:
         self._busy = False
+        self._stop_progress()
         if not dry_run:
             # La ejecución real falló, pero el modo seguro debe recuperarse.
             self._set_dry_run(True)
@@ -861,6 +879,17 @@ class OrganizeTab(ctk.CTkFrame):
             )
         if hasattr(self, "_summary_label"):
             self._summary_label.configure(text="")
+
+    # -- barra de progreso -------------------------------------------------
+    def _start_progress(self) -> None:
+        """Muestra y anima la barra mientras se organiza de verdad."""
+        self._progress.grid()
+        self._progress.start()
+
+    def _stop_progress(self) -> None:
+        """Detiene y oculta la barra; es seguro si no estaba activa."""
+        self._progress.stop()
+        self._progress.grid_remove()
 
     # -- mensajes e hilos --------------------------------------------------
     def _show_message(self, text: str, kind: str = "muted") -> None:

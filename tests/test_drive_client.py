@@ -102,3 +102,37 @@ def test_move_file_valida_el_archivo():
 def test_move_file_valida_el_destino():
     with pytest.raises(ValueError, match="destino"):
         move_file(MagicMock(), "archivo", "   ", ["origen"])
+
+
+def test_get_user_profile_extrae_nombre_y_correo():
+    from src.drive.drive_client import get_user_profile
+
+    service = MagicMock()
+    service.about.return_value.get.return_value.execute.return_value = {
+        "user": {
+            "displayName": "User Name",
+            "emailAddress": "user@example.com",
+        }
+    }
+
+    result = get_user_profile(service)
+
+    service.about.return_value.get.assert_called_once_with(
+        fields="user(displayName, emailAddress)"
+    )
+    assert result == {
+        "display_name": "User Name",
+        "email": "user@example.com",
+    }
+
+
+def test_get_user_profile_sin_datos_devuelve_none():
+    from src.drive.drive_client import get_user_profile
+
+    service = MagicMock()
+    service.about.return_value.get.return_value.execute.return_value = {}
+
+    assert get_user_profile(service) == {
+        "display_name": None,
+        "email": None,
+    }

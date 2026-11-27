@@ -43,6 +43,27 @@ def get_root_id(service):
     """Obtener el ID de la carpeta Root del Drive"""
     return service.files().get(fileId="root", fields="id").execute()["id"]
 
+def get_user_profile(service):
+    """Obtiene el nombre y el correo de la cuenta autenticada.
+
+    Args:
+        service: Servicio de Drive autenticado.
+
+    Returns:
+        Diccionario con ``display_name`` y ``email``. Ambos pueden ser
+        ``None`` si Google no los devuelve.
+    """
+    response = (
+        service.about()
+        .get(fields="user(displayName, emailAddress)")
+        .execute()
+    )
+    user = response.get("user", {}) if isinstance(response, dict) else {}
+    return {
+        "display_name": user.get("displayName"),
+        "email": user.get("emailAddress"),
+    }
+
 def create_folder(service, name, parent_id):
     """Crea una carpeta en Drive y devuelve sus datos básicos.
 

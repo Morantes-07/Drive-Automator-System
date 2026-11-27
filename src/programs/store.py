@@ -81,12 +81,31 @@ class ProgramStore:
         """Vacía el registro."""
         self._items.clear()
 
+    def replace(self, definitions) -> None:
+        """Reemplaza todo el registro de forma atómica.
+
+        Se valida cada definición y la unicidad de nombres antes de tocar la
+        lista actual: si algo falla, el registro queda como estaba.
+
+        Args:
+            definitions: Definiciones que sustituirán a las actuales.
+        """
+        candidates = list(definitions)
+        seen: set[str] = set()
+        for definition in candidates:
+            self._validate_definition(definition)
+            key = definition.program.casefold()
+            if key in seen:
+                raise ProgramStoreError(
+                    f"Ya existe un programa llamado '{definition.program}'."
+                )
+            seen.add(key)
+        self._items = candidates
+
     # -- validación --------------------------------------------------------
-    def _validate(
-        self,
-        definition: ProgramDefinition,
-        ignore_index: int | None = None,
-    ) -> None:
+    @staticmethod
+    def _validate_definition(definition: ProgramDefinition) -> None:
+        """Comprueba el tipo, los campos obligatorios y el patrón."""
         if not isinstance(definition, ProgramDefinition):
             raise ProgramStoreError(
                 "Se esperaba una definición de programa, se recibió "
@@ -108,6 +127,12 @@ class ProgramStore:
         except CompileError as exc:
             raise ProgramStoreError(str(exc)) from exc
 
+    def _validate(
+        self,
+        definition: ProgramDefinition,
+        ignore_index: int | None = None,
+    ) -> None:
+        self._validate_definition(definition)
         existing = self.index_of(definition.program)
         if existing is not None and existing != ignore_index:
             raise ProgramStoreError(

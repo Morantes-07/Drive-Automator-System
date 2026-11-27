@@ -36,3 +36,12 @@ class ProgramDefinition:
     def to_spec(self) -> PatternSpec:
         """Convierte la definición en el patrón que consume el compilador."""
         return PatternSpec(program=self.program, pattern=self.pattern)
+
+    def to_dict(self) -> dict[str, str | None]:
+        """Representación serializable para ``programs.json``."""
+        return {
+            "program": self.program,
+            "pattern": self.pattern,
+            "destination_path": self.destination_path,
+            "destination_id": self.destination_id,
+        }

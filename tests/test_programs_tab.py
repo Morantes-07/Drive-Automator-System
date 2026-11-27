@@ -182,3 +182,33 @@ def test_seleccionar_programa_oculta_la_lista(tab):
 
     assert not tab._suggestions.is_visible
     assert tab._pattern_entry.get() == "G{número}-Power BI"
+
+
+# -- recarga al cambiar de cuenta ------------------------------------------
+def test_reload_vacia_la_tabla_y_el_formulario(tab):
+    tab._store.add(
+        ProgramDefinition(
+            program="Power BI",
+            pattern="G{número}-Power BI",
+            destination_path="Mi Drive/Power BI",
+        )
+    )
+    tab._refresh_table()
+    tab._edit_index = 0
+    tab._pattern_entry.insert(0, "G{número}")
+
+    tab.reload()
+
+    assert len(tab.tree.get_children("")) == 1
+    assert tab._pattern_entry.get() == ""
+    assert tab._edit_index is None
+    assert tab._message_label.cget("text") == ""
+
+
+def test_reload_sin_limpiar_conserva_el_formulario(tab):
+    tab._pattern_entry.insert(0, "G{número}")
+
+    tab.reload(clear_form=False)
+
+    assert tab._pattern_entry.get() == "G{número}"
+    assert tab._edit_index is None

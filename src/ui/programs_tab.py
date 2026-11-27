@@ -79,6 +79,19 @@ class ProgramsTab(ctk.CTkFrame):
         """Pone el foco en el campo del nombre del programa."""
         self._program_entry.focus_set()
 
+    def reload(self, *, clear_form: bool = True) -> None:
+        """Refresca la tabla después de cambiar de cuenta.
+
+        Args:
+            clear_form: Si es ``True``, también vacía el formulario para no
+                editar un programa de la cuenta anterior.
+        """
+        self._edit_index = None
+        if clear_form:
+            self._clear_form()
+        self._refresh_table()
+        self._show_message("", "muted")
+
     # -- construcción de la interfaz --------------------------------------
     def _build_form(self) -> None:
         theme = self._theme

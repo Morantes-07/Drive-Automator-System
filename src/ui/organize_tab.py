@@ -16,7 +16,9 @@ import customtkinter as ctk
 
 from src.authentication.auth import (
     AuthenticationCancelled,
+    AuthPaths,
     BrowserProvider,
+    default_auth_paths,
     get_credentials,
 )
 from src.config import DRY_RUN
@@ -54,6 +56,7 @@ COLUMNS = ("archivo", "programa", "subcarpeta", "estado", "detalle")
 
 ReloadCallback = Callable[[], None]
 DryRunChangeCallback = Callable[[bool], None]
+AuthPathsProvider = Callable[[], AuthPaths]
 
 
 class OrganizeTab(ctk.CTkFrame):
@@ -70,6 +73,8 @@ class OrganizeTab(ctk.CTkFrame):
         on_dry_run_change: Se llama cuando cambia el modo de simulación.
         browser_provider: Se llama si hay que regenerar el token para elegir
             el navegador de autenticación.
+        auth_paths_provider: Devuelve los archivos del perfil activo al
+            iniciar un escaneo o una ejecución.
     """
 
     def __init__(
@@ -82,6 +87,7 @@ class OrganizeTab(ctk.CTkFrame):
         settings: RuntimeSettings | None = None,
         on_dry_run_change: DryRunChangeCallback | None = None,
         browser_provider: BrowserProvider | None = None,
+        auth_paths_provider: AuthPathsProvider | None = None,
     ):
         super().__init__(master, fg_color="transparent")
 
@@ -91,6 +97,9 @@ class OrganizeTab(ctk.CTkFrame):
         self._settings = settings or RuntimeSettings(dry_run=DRY_RUN)
         self._on_dry_run_change = on_dry_run_change
         self._browser_provider = browser_provider
+        self._auth_paths_provider = (
+            auth_paths_provider or default_auth_paths
+        )
         self._dry_run_var = tk.BooleanVar(value=self._settings.dry_run)
         self._model: FolderTreeModel | None = None
         self._plan: OrganizationPlan | None = None
@@ -117,6 +126,11 @@ class OrganizeTab(ctk.CTkFrame):
     def plan(self) -> OrganizationPlan | None:
         """Plan actual, o None si todavía no se ha escaneado."""
         return self._plan
+
+    @property
+    def busy(self) -> bool:
+        """Indica si hay un escaneo u organización en curso."""
+        return self._busy
 
     def set_model(self, model: FolderTreeModel | None) -> None:
         """Actualiza el árbol de carpetas disponible."""
@@ -485,6 +499,13 @@ class OrganizeTab(ctk.CTkFrame):
         model = self._model
         store = self._store
         categories = set(self._selected_categories)
+        try:
+            auth_paths = self._auth_paths_provider()
+        except Exception as exc:
+            self._show_message(
+                f"No se pudo seleccionar la cuenta: {exc}", "danger"
+            )
+            return
 
         self._busy = True
         self._clear_plan()
@@ -494,7 +515,7 @@ class OrganizeTab(ctk.CTkFrame):
 
         threading.Thread(
             target=self._scan_worker,
-            args=(categories, model, store, generation),
+            args=(categories, model, store, generation, auth_paths),
             daemon=True,
         ).start()
 
@@ -504,11 +525,13 @@ class OrganizeTab(ctk.CTkFrame):
         model: FolderTreeModel,
         store: ProgramStore,
         generation: int,
+        auth_paths: AuthPaths,
     ) -> None:
         """Lista, filtra y planifica sin tocar la interfaz."""
         try:
             credentials = get_credentials(
-                browser_provider=self._browser_provider
+                browser_provider=self._browser_provider,
+                paths=auth_paths,
             )
             service = get_service(credentials)
             files = list_files(service, QUERY_OWNED)
@@ -597,6 +620,13 @@ class OrganizeTab(ctk.CTkFrame):
         plan = self._plan
         if plan is None:
             return
+        try:
+            auth_paths = self._auth_paths_provider()
+        except Exception as exc:
+            self._show_message(
+                f"No se pudo seleccionar la cuenta: {exc}", "danger"
+            )
+            return
         dry_run = self._settings.dry_run
         self._busy = True
         self._show_message(
@@ -611,7 +641,7 @@ class OrganizeTab(ctk.CTkFrame):
         generation = self._generation
         threading.Thread(
             target=self._execute_worker,
-            args=(create_missing, plan, generation, dry_run),
+            args=(create_missing, plan, generation, dry_run, auth_paths),
             daemon=True,
         ).start()
 
@@ -621,13 +651,15 @@ class OrganizeTab(ctk.CTkFrame):
         plan: OrganizationPlan,
         generation: int,
         dry_run: bool,
+        auth_paths: AuthPaths,
     ) -> None:
         """Crea carpetas (si hace falta) y mueve los archivos."""
         try:
             service = None
             if not dry_run:
                 credentials = get_credentials(
-                    browser_provider=self._browser_provider
+                    browser_provider=self._browser_provider,
+                    paths=auth_paths,
                 )
                 service = get_service(credentials)
 

@@ -2,6 +2,9 @@
 credentials.json
 token.json
 
+# Datos administrados de las cuentas (credenciales, tokens y programas)
+data/
+
 # Temporales y entornos
 __pycache__/
 */__pycache__/

@@ -223,3 +223,105 @@ def test_on_drive_error_muestra_autenticacion_cancelada():
 
     assert fake_self.status[1] == "warning"
     assert "cancelada" in fake_self.status[0].lower()
+
+
+def test_provide_browser_desde_un_hilo_marshal_al_principal(monkeypatch):
+    sentinel = object()
+    calls: dict[str, object] = {}
+
+    def fake_pick(parent, *, theme):
+        calls["parent"] = parent
+        calls["theme"] = theme
+        return sentinel
+
+    class FakeSelf:
+        _theme = DEFAULT_THEME
+        _closing = False
+
+        def after(self, delay, callback):
+            calls["delay"] = delay
+            callback()
+
+    monkeypatch.setattr(app_module, "pick_browser", fake_pick)
+    fake_self = FakeSelf()
+    result: dict[str, object] = {}
+
+    def run():
+        result["value"] = DriveOrganizerApp._provide_browser(fake_self)
+
+    thread = threading.Thread(target=run)
+    thread.start()
+    thread.join(timeout=5)
+
+    assert not thread.is_alive()
+    assert result["value"] is sentinel
+    assert calls["delay"] == 0
+    assert calls["parent"] is fake_self
+    assert calls["theme"] is DEFAULT_THEME
+
+
+def test_provide_browser_devuelve_none_si_after_falla():
+    class FakeSelf:
+        _theme = DEFAULT_THEME
+        _closing = False
+
+        def after(self, *_args):
+            raise RuntimeError("ventana destruida")
+
+    result: dict[str, object] = {}
+
+    def run():
+        result["value"] = DriveOrganizerApp._provide_browser(FakeSelf())
+
+    thread = threading.Thread(target=run)
+    thread.start()
+    thread.join(timeout=5)
+
+    assert not thread.is_alive()
+    assert result["value"] is None
+
+
+def test_provide_browser_devuelve_none_si_la_ventana_se_cierra():
+    class FakeSelf:
+        _theme = DEFAULT_THEME
+        _closing = True
+
+        def after(self, *_args):
+            pass
+
+    result: dict[str, object] = {}
+
+    def run():
+        result["value"] = DriveOrganizerApp._provide_browser(FakeSelf())
+
+    thread = threading.Thread(target=run)
+    thread.start()
+    thread.join(timeout=5)
+
+    assert not thread.is_alive()
+    assert result["value"] is None
+
+
+def test_provide_browser_devuelve_none_si_falla_el_selector(monkeypatch):
+    monkeypatch.setattr(
+        app_module, "pick_browser", Mock(side_effect=RuntimeError("sin tk"))
+    )
+
+    class FakeSelf:
+        _theme = DEFAULT_THEME
+        _closing = False
+
+        def after(self, _delay, callback):
+            callback()
+
+    result: dict[str, object] = {}
+
+    def run():
+        result["value"] = DriveOrganizerApp._provide_browser(FakeSelf())
+
+    thread = threading.Thread(target=run)
+    thread.start()
+    thread.join(timeout=5)
+
+    assert not thread.is_alive()
+    assert result["value"] is None
